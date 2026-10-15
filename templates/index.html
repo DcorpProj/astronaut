@@ -1,0 +1,3349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
+<meta name="theme-color" content="#171717" />
+<title>Astronaut AI</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='26' fill='none' stroke='%234c1d95' stroke-width='6'/%3E%3Ccircle cx='32' cy='32' r='14' fill='%237c3aed'/%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<style>
+  :root {
+    --bg: #212121; --bg-side: #171717; --bg-input: #2f2f2f;
+    --bg-hover: #2a2a2a; --bg-active: #303030; --bg-user: #2f2f2f;
+    --border: #383838; --border-soft: #2a2a2a;
+    --text: #ececec; --text-dim: #a8a8a8; --text-mute: #6b6b6b;
+    --accent: #a480ff; --accent-hi: #b898ff;
+    --green: #4ade80; --amber: #fbbf24; --red: #f87171;
+    --sidebar-w: 260px;
+    --backdrop:    rgba(0,0,0,0.55);
+    --pre-bg:      #0f0f0f;
+    --accent-soft: rgba(164,128,255,0.14);
+    --accent-fg:   #1a0e2e;
+    --shadow:      rgba(0,0,0,0.5);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; overscroll-behavior-y: none; }
+  body { background: var(--bg); color: var(--text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14.5px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  @media (max-width: 767px) { body { font-size: 15px; } }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #4a4a4a; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  @media (max-width: 767px) { ::-webkit-scrollbar { width: 0; height: 0; } }
+
+  button { font-family: inherit; }
+  textarea, input, select { font-family: inherit; }
+
+  .md p { margin: 0.5em 0; } .md p:first-child { margin-top: 0; } .md p:last-child { margin-bottom: 0; }
+  .md ul, .md ol { margin: 0.5em 0; padding-left: 1.5em; } .md li { margin: 0.15em 0; }
+  .md h1, .md h2, .md h3, .md h4 { font-weight: 600; margin: 0.9em 0 0.4em; line-height: 1.3; }
+  .md h1 { font-size: 1.4em; } .md h2 { font-size: 1.2em; } .md h3 { font-size: 1.05em; }
+  .md code { background: #2d2d2d; padding: 0.12em 0.35em; border-radius: 4px;
+    font-size: 0.9em; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: #e6c9ff; word-break: break-word; }
+  .md pre { background: #0f0f0f; border: 1px solid var(--border-soft);
+    border-radius: 8px; padding: 12px 14px; overflow-x: auto;
+    margin: 0.7em 0; font-size: 13px; line-height: 1.5; max-width: 100%; }
+  @media (max-width: 767px) { .md pre { font-size: 12px; padding: 10px 12px; border-radius: 6px; } }
+  .md pre code, .md pre code.hljs { background: transparent; padding: 0; font-size: inherit; }
+  .md pre code.hljs { color: inherit; }
+  .md a { color: var(--accent); text-decoration: underline; word-break: break-all; }
+  .md blockquote { border-left: 3px solid var(--border); padding-left: 12px; color: var(--text-dim); margin: 0.6em 0; }
+  .md table { border-collapse: collapse; margin: 0.7em 0; font-size: 0.92em; display: block; overflow-x: auto; max-width: 100%; }
+  .md th, .md td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; white-space: nowrap; }
+  .md th { background: #262626; font-weight: 600; }
+  .md hr { border: 0; border-top: 1px solid var(--border); margin: 1em 0; }
+  .md strong { font-weight: 600; color: #fff; }
+  .md img { max-width: 100%; height: auto; border-radius: 8px; }
+  .hljs { background: transparent !important; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: none; } }
+  .fade-in { animation: fadeIn 0.18s ease-out; }
+
+  .brand-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px rgba(164,128,255,0.28);
+    flex-shrink: 0;
+    vertical-align: middle;
+    animation: brand-pulse 2.2s ease-in-out infinite;
+  }
+  .brand-dot.idle  { animation-play-state: paused; opacity: 0.55; }
+  .brand-dot.busy  { animation-duration: 0.9s; }
+  .brand-dot.error { background: var(--red); box-shadow: 0 0 0 2px rgba(248,113,113,0.28); animation: none; }
+  @keyframes brand-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.55; transform: scale(0.85); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .brand-dot { animation: none; }
+  }
+
+  .typing::after { content: "▍"; display: inline-block; margin-left: 2px;
+    animation: blink 1s steps(2, start) infinite; color: var(--text-dim); }
+  @keyframes blink { to { visibility: hidden; } }
+
+  .modal-backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
+
+  .tab-btn { position: relative; padding: 8px 12px; border-radius: 8px;
+    font-size: 13.5px; color: var(--text-dim); background: transparent;
+    border: none; cursor: pointer; text-align: left; white-space: nowrap; flex-shrink: 0; }
+  .tab-btn:hover { background: var(--bg-hover); }
+  .tab-btn.active { background: var(--bg-active); color: var(--text); }
+  @media (min-width: 768px) {
+    .tab-btn { width: 100%; }
+    .tab-btn.active::before { content: ""; position: absolute; left: 0; top: 6px; bottom: 6px;
+      width: 2px; background: var(--accent); border-radius: 2px; }
+  }
+  @media (max-width: 767px) {
+    .tab-btn.active::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: 0;
+      height: 2px; background: var(--accent); border-radius: 2px; }
+  }
+
+  .tool-block { background: #1a1a1a; border: 1px solid var(--border-soft);
+    border-radius: 8px; margin: 8px 0; overflow: hidden;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+  @media (max-width: 767px) { .tool-block { font-size: 11.5px; border-radius: 6px; } }
+  .tool-header { padding: 7px 12px; cursor: pointer; display: flex; align-items: center;
+    gap: 8px; color: var(--text-dim); }
+  .tool-header:hover { background: var(--bg-hover); }
+  .tool-chevron { transition: transform 0.15s; flex-shrink: 0; }
+  .tool-block.open .tool-chevron { transform: rotate(90deg); }
+  .tool-body { display: none; padding: 10px 12px;
+    border-top: 1px solid var(--border-soft);
+    white-space: pre-wrap; word-break: break-word;
+    color: var(--text-dim); max-height: 420px; overflow: auto; }
+  @media (max-width: 767px) { .tool-body { max-height: 280px; padding: 8px 10px; } }
+  .tool-block.open .tool-body { display: block; }
+  .tool-name { color: var(--accent); font-weight: 600; flex-shrink: 0; }
+  .tool-args { color: var(--text-mute); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .thinking-block { background: rgba(196,132,252,0.05);
+    border-left: 2px solid rgba(196,132,252,0.4);
+    padding: 8px 12px; border-radius: 6px; margin-bottom: 10px;
+    font-size: 12.5px; color: var(--text-mute);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .thinking-label { color: #c084fc; font-weight: 600; margin-bottom: 4px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .thinking-body { white-space: pre-wrap; word-break: break-word;
+    max-height: 260px; overflow-y: auto; }
+  .thinking-block.done { opacity: 0.65; }
+
+  .plan-panel { background: rgba(164,128,255,0.06);
+    border: 1px solid rgba(164,128,255,0.22);
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;
+    animation: fadeIn 0.2s ease-out; }
+  .plan-head { display: flex; align-items: center; gap: 8px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--accent); font-weight: 600; margin-bottom: 10px; }
+  .plan-head .plan-count { color: var(--text-mute); font-weight: 400;
+    text-transform: none; letter-spacing: 0; margin-left: auto; }
+  .plan-step { display: flex; gap: 10px; padding: 7px 0;
+    border-top: 1px solid rgba(164,128,255,0.10); }
+  .plan-step:first-of-type { border-top: none; }
+  .plan-step .ps-marker { flex-shrink: 0; width: 22px; height: 22px;
+    border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+    background: rgba(164,128,255,0.14); color: var(--accent);
+    border: 1px solid rgba(164,128,255,0.32);
+    transition: background 0.2s, color 0.2s, border-color 0.2s; }
+  .plan-step .ps-body { min-width: 0; flex: 1; }
+  .plan-step .ps-title { font-size: 13px; color: var(--text); line-height: 1.35; }
+  .plan-step .ps-detail { font-size: 11.5px; color: var(--text-mute);
+    margin-top: 2px; line-height: 1.4; }
+  .plan-step.done .ps-marker { background: var(--green); color: #052e16;
+    border-color: var(--green); }
+  .plan-step.done .ps-title { color: var(--text-mute);
+    text-decoration: line-through;
+    text-decoration-color: rgba(168,168,168,0.4); }
+  .plan-step.active .ps-marker { background: var(--accent); color: #1a0e2e;
+    border-color: var(--accent); box-shadow: 0 0 0 4px rgba(164,128,255,0.18); }
+  .plan-panel.aborted { opacity: 0.55; border-color: rgba(251,191,36,0.3); }
+  .plan-panel.aborted .plan-head { color: var(--amber); }
+
+  .agents-banner { display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; margin-bottom: 12px; border-radius: 10px;
+    background: rgba(74,222,128,0.06);
+    border: 1px solid rgba(74,222,128,0.22);
+    color: var(--green); font-size: 12px;
+    animation: fadeIn 0.2s ease-out; }
+  .agents-banner .ab-icon { flex-shrink: 0; color: var(--green); }
+  .agents-banner .ab-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .agents-banner .ab-files { color: var(--text-mute); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .agents-banner button.ab-toggle { flex-shrink: 0; background: transparent; border: none;
+    color: var(--green); cursor: pointer; font-size: 11px;
+    text-decoration: underline; padding: 0; }
+  .agents-banner .ab-details { display: none; margin-top: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px; color: var(--text-mute);
+    white-space: pre-wrap; word-break: break-all; }
+  .agents-banner.open .ab-details { display: block; }
+  .agents-banner.open { flex-wrap: wrap; }
+
+  .pin-strip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 6px; margin-bottom: 6px;
+    font-size: 11.5px; color: var(--text-mute);
+    min-width: 0; flex-wrap: nowrap;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .pin-strip::-webkit-scrollbar { display: none; }
+
+  .pin-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 8px;
+    background: transparent; border: 1px solid var(--border-soft);
+    color: var(--text-dim); font-size: 11.5px; cursor: pointer;
+    flex-shrink: 0; white-space: nowrap;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+  }
+  .pin-btn:hover { background: var(--bg-hover); color: var(--text); border-color: var(--border); }
+  .pin-btn.active { color: var(--accent); border-color: rgba(164,128,255,0.35);
+    background: rgba(164,128,255,0.08); }
+  .pin-btn.git { color: var(--amber); border-color: rgba(251,191,36,0.28); }
+  .pin-btn.git:hover { border-color: rgba(251,191,36,0.5); }
+  .pin-btn.git.none { color: var(--text-mute); border-color: var(--border-soft); }
+
+  .pin-badge {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10.5px; color: var(--text-mute);
+    background: var(--bg-input); padding: 0 5px;
+    border-radius: 4px; flex-shrink: 0;
+  }
+
+  .pin-chips { display: flex; gap: 5px; align-items: center; min-width: 0; flex: 1; overflow: hidden; }
+  .pin-file-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 6px 2px 8px; border-radius: 999px;
+    background: rgba(164,128,255,0.10);
+    border: 1px solid rgba(164,128,255,0.28);
+    color: var(--accent);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px; max-width: 180px; flex-shrink: 0;
+  }
+  .pin-file-chip .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pin-file-chip .x {
+    all: unset; cursor: pointer; color: var(--accent); opacity: 0.6;
+    font-size: 13px; line-height: 1; padding: 0 2px;
+  }
+  .pin-file-chip .x:hover { opacity: 1; color: var(--red); }
+
+  .pin-ws {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 8px;
+    color: var(--text-mute);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px; max-width: 40%; flex-shrink: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    cursor: pointer;
+  }
+  .pin-ws:hover { color: var(--text); background: var(--bg-hover); }
+
+  .pin-menu {
+    position: fixed; z-index: 60;
+    min-width: 260px; max-width: 340px; max-height: 60vh;
+    overflow-y: auto;
+    background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    padding: 6px; animation: fadeIn 0.15s ease-out;
+  }
+  .pin-menu-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: 8px; cursor: pointer;
+    font-size: 12.5px; color: var(--text-dim);
+    width: 100%; background: transparent; border: none;
+    text-align: left; font-family: inherit;
+  }
+  .pin-menu-item:hover { background: var(--bg-hover); color: var(--text); }
+  .pin-menu-item.active { color: var(--accent); background: rgba(164,128,255,0.10); }
+  .pin-menu-item .meta { margin-left: auto; font-size: 11px; color: var(--text-mute);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .pin-menu-head { padding: 6px 10px; font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-mute); }
+  .pin-menu-empty { padding: 12px 10px; font-size: 12px;
+    color: var(--text-mute); text-align: center; }
+
+  #scrollBtn { position: absolute; bottom: 130px; right: 20px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bg-input); border: 1px solid var(--border);
+    display: none; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+  @media (min-width: 768px) { #scrollBtn { bottom: 140px; right: 32px; } }
+  #scrollBtn.show { display: flex; }
+  #scrollBtn:hover { background: var(--bg-hover); }
+
+  #toasts { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; gap: 8px; z-index: 100;
+    pointer-events: none; max-width: calc(100vw - 32px); }
+  @media (max-width: 767px) { #toasts { bottom: calc(140px + env(safe-area-inset-bottom)); } }
+  .toast { background: #2a2a2a; border: 1px solid var(--border); color: var(--text);
+    padding: 8px 16px; border-radius: 8px; font-size: 13px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    animation: fadeIn 0.15s ease-out; text-align: center; }
+  .toast.error { border-color: rgba(248,113,113,0.4); color: #fecaca; }
+  .toast.success { border-color: rgba(74,222,128,0.4); color: #bbf7d0; }
+
+  ::selection { background: rgba(164,128,255,0.3); }
+
+  .icon-btn { width: 32px; height: 32px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-dim); transition: background 0.1s, color 0.1s;
+    cursor: pointer; border: none; background: transparent; flex-shrink: 0; }
+  @media (min-width: 768px) { .icon-btn { width: 28px; height: 28px; } }
+  .icon-btn:hover { background: var(--bg-hover); color: var(--text); }
+  .icon-btn:active { background: var(--bg-active); }
+
+  .input-btn { width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--text-dim); background: transparent;
+    cursor: pointer; border: 1px solid transparent; flex-shrink: 0;
+    transition: background 0.1s, color 0.1s, border 0.1s; }
+  .input-btn:hover { background: var(--bg-hover); color: var(--text); }
+  .input-btn:active { background: var(--bg-active); }
+  .input-btn.active { color: var(--accent);
+    background: rgba(164,128,255,0.14);
+    border-color: rgba(164,128,255,0.28); }
+  .input-btn.active:hover { background: rgba(164,128,255,0.22); }
+  .input-btn.warn-active { color: var(--amber);
+    background: rgba(251,191,36,0.14);
+    border-color: rgba(251,191,36,0.28); }
+  .input-btn.warn-active:hover { background: rgba(251,191,36,0.22); }
+  .input-btn.send { background: var(--accent); color: #1a0e2e; }
+  .input-btn.send:hover { background: var(--accent-hi); }
+  .input-btn.stop { background: var(--red); color: #fff; }
+  .input-btn.stop:hover { background: #ef4444; }
+
+  .msg-actions { opacity: 0; transition: opacity 0.15s; }
+  .msg:hover .msg-actions { opacity: 1; }
+  @media (hover: none) { .msg-actions { opacity: 0.6; } }
+
+  .switch { position: relative; width: 36px; height: 20px; flex: 0 0 auto;
+    background: #3a3a3a; border-radius: 10px; transition: background 0.15s;
+    cursor: pointer; border: none; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; border-radius: 50%; background: #f0f0f0;
+    transition: transform 0.15s; }
+  .switch.on { background: var(--accent); }
+  .switch.on::after { transform: translateX(16px); }
+
+  .field { width: 100%; background: #2a2a2a; border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; color: var(--text);
+    font-size: 13.5px; outline: none; transition: border 0.15s; }
+  @media (max-width: 767px) { .field { font-size: 16px; } }
+  .field:focus { border-color: var(--accent); }
+
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13.5px;
+    font-weight: 500; cursor: pointer; border: none;
+    transition: background 0.15s; white-space: nowrap; }
+  @media (max-width: 767px) { .btn { padding: 10px 16px; } }
+  .btn-primary { background: var(--accent); color: #1a0e2e; }
+  .btn-primary:hover { background: var(--accent-hi); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: var(--bg-input); color: var(--text); }
+  .btn-secondary:hover { background: var(--bg-hover); }
+  .btn-danger { background: #7f1d1d; color: #fecaca; }
+  .btn-danger:hover { background: #991b1b; }
+
+  .chip { display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 6px; font-size: 11px;
+    background: var(--bg-input); color: var(--text-dim);
+    border: 1px solid var(--border-soft); flex-shrink: 0; }
+  .chip.on { background: rgba(164,128,255,0.15); color: var(--accent); border-color: rgba(164,128,255,0.3); }
+  .chip.mcp { background: rgba(14,116,144,0.15); color: #67e8f9; border-color: rgba(14,116,144,0.3); }
+  .chip.cloud { background: rgba(56,189,248,0.15); color: #7dd3fc; border-color: rgba(56,189,248,0.3); }
+  .chip.think { background: rgba(251,191,36,0.15); color: #fcd34d; border-color: rgba(251,191,36,0.3); }
+
+  .attach-chip { display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 10px; margin: 3px 3px 3px 0; border-radius: 999px;
+    background: rgba(164,128,255,0.12); color: var(--accent);
+    border: 1px solid rgba(164,128,255,0.3);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px; white-space: nowrap; max-width: 100%; }
+  .attach-chip .name { overflow: hidden; text-overflow: ellipsis; }
+
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--border-soft);
+    gap: 12px;
+  }
+  .row:last-child { border-bottom: none; }
+  .row-label { font-size: 13.5px; color: var(--text); }
+  .row-hint  { font-size: 11.5px; color: var(--text-mute); margin-top: 2px; }
+
+  #sidebar { position: fixed; top: 0; left: 0; bottom: 0;
+    width: 80vw; max-width: var(--sidebar-w); z-index: 60;
+    transform: translateX(-100%);
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    display: flex; }
+  #sidebar.open { transform: none; }
+  #sidebarBackdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    z-index: 55; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  #sidebarBackdrop.show { opacity: 1; pointer-events: auto; }
+  @media (min-width: 1024px) {
+    #sidebar { position: relative; transform: none !important;
+      width: var(--sidebar-w); max-width: none;
+      z-index: auto; padding-top: 0; padding-bottom: 0; transition: none; }
+    #sidebarBackdrop { display: none !important; }
+  }
+  @media (min-width: 768px) and (max-width: 1023px) { #sidebar { max-width: 320px; } }
+
+  #modelMenu { position: fixed; z-index: 45;
+    width: calc(100vw - 24px); max-width: 380px; border-radius: 12px;
+    overflow: hidden; background: var(--bg-input); border: 1px solid var(--border);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5); }
+  @media (max-width: 767px) {
+    #modelMenu { width: 100vw; max-width: 100vw; left: 0 !important; right: 0 !important;
+      bottom: 0 !important; top: auto !important;
+      border-radius: 16px 16px 0 0; border-bottom: none; max-height: 65vh;
+      padding-bottom: env(safe-area-inset-bottom);
+      animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+    #modelMenu::before { content: ""; position: absolute; top: 8px; left: 50%;
+      transform: translateX(-50%); width: 36px; height: 4px;
+      background: #4a4a4a; border-radius: 2px; }
+  }
+
+  #settingsModal .modal-shell {
+    width: 100%; height: 100%; max-width: 100%; max-height: 100%;
+    border-radius: 0;
+    display: flex; flex-direction: column; overflow: hidden;
+    background: var(--bg); border: 1px solid var(--border);
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  @media (min-width: 768px) {
+    #settingsModal .modal-shell {
+      width: 90%; max-width: 860px; height: 85%;
+      border-radius: 16px; flex-direction: row;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+    }
+  }
+  @media (min-width: 1024px) {
+    #settingsModal .modal-shell { max-width: 960px; height: 80%; }
+  }
+
+  #settingsTabs {
+    display: flex; flex-direction: row; gap: 4px; padding: 8px;
+    overflow-x: auto; overflow-y: hidden;
+    background: var(--bg-side);
+    border-bottom: 1px solid var(--border-soft);
+    scrollbar-width: none; flex-shrink: 0; min-width: 0;
+  }
+  #settingsTabs::-webkit-scrollbar { display: none; }
+  @media (min-width: 768px) {
+    #settingsTabs {
+      flex-direction: column; width: 200px; gap: 2px; padding: 8px;
+      border-bottom: none; border-right: 1px solid var(--border-soft);
+      overflow-x: hidden; overflow-y: auto;
+    }
+  }
+  @media (max-width: 767px) {
+    #settingsTabs {
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x proximity;
+      mask-image: linear-gradient(to right,
+        #000 0, #000 calc(100% - 24px), transparent 100%);
+      -webkit-mask-image: linear-gradient(to right,
+        #000 0, #000 calc(100% - 24px), transparent 100%);
+    }
+    #settingsTabs .tab-btn { scroll-snap-align: start; }
+  }
+
+  #settingsPanel {
+    display: flex; flex-direction: column;
+    flex: 1; min-width: 0; min-height: 0;
+  }
+
+  #settingsBody {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    overflow-wrap: anywhere; padding: 16px;
+    font-size: 14px;
+    container-type: inline-size; container-name: settings;
+  }
+  @media (min-width: 640px) { #settingsBody { padding: 20px; } }
+  #settingsBody > * { min-width: 0; }
+
+  @container settings (max-width: 520px) {
+    .row { flex-direction: column; align-items: stretch; gap: 8px; }
+    .row > div:first-child { min-width: 0; }
+    .row input.field, .row select.field, .row textarea.field {
+      width: 100% !important; max-width: 100%;
+    }
+    .row > .switch { align-self: flex-start; }
+    .row.inline { flex-direction: row; align-items: center; }
+  }
+
+  #mainHeader { padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right)); }
+  #mainFooter { padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--bg) 60%, transparent); }
+  @media (min-width: 768px) {
+    #mainFooter { padding-left: 24px; padding-right: 24px; padding-bottom: 16px; }
+  }
+  #chat { overscroll-behavior: contain; }
+  #chatInner { padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right)); }
+  @media (min-width: 768px) { #chatInner { padding-left: 24px; padding-right: 24px; } }
+
+  @media (max-width: 1023px) { .desktop-only { display: none !important; } }
+  @media (min-width: 1024px) { .mobile-only { display: none !important; } }
+
+  .welcome-card { max-width: 560px; margin: 0 auto; text-align: center; padding: 40px 16px; }
+  @media (max-width: 767px) { .welcome-card { padding: 24px 8px; } }
+  .welcome-title { font-size: 22px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+  @media (max-width: 767px) { .welcome-title { font-size: 18px; } }
+  .welcome-sub { color: var(--text-mute); font-size: 13px; margin-bottom: 20px; }
+  .suggestion { display: block; width: 100%; text-align: left;
+    padding: 12px 14px; border-radius: 10px;
+    border: 1px solid var(--border-soft); background: var(--bg-side);
+    color: var(--text-dim); font-size: 13px; cursor: pointer;
+    transition: all 0.12s; margin-bottom: 8px; }
+  .suggestion:hover { border-color: var(--accent); color: var(--text); background: var(--bg-hover); }
+
+  .ws-row { display: flex; gap: 8px; align-items: stretch; }
+  .ws-row .field { flex: 1; min-width: 0; }
+
+  /* ─── Repomap panel ─────────────────────────────── */
+  .repomap-overlay {
+    position: fixed; inset: 0; z-index: 40;
+    background: var(--backdrop); backdrop-filter: blur(2px);
+  }
+  .repomap-panel {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: 80vw; max-width: 1100px;
+    background: var(--bg);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    z-index: 41;
+    animation: repomapIn .22s cubic-bezier(.2, .9, .25, 1);
+  }
+  @keyframes repomapIn {
+    from { transform: translateX(30px); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+  }
+  @media (max-width: 820px) {
+    .repomap-panel { width: 100vw; max-width: 100vw; border-left: none; }
+  }
+
+  .repomap-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+  }
+  .repomap-header .title {
+    font-weight: 600; font-size: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .repomap-header .title .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+  }
+  .repomap-header .meta {
+    color: var(--text-mute); font-size: 11.5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .repomap-header .spacer { flex: 1; }
+
+  .repomap-body { flex: 1; display: flex; min-height: 0; }
+  .repomap-sidebar {
+    width: 240px; flex-shrink: 0;
+    background: var(--bg-side);
+    border-right: 1px solid var(--border-soft);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .repomap-sidebar .tabs {
+    display: flex; gap: 2px; padding: 6px; flex-shrink: 0;
+  }
+  .repomap-sidebar .tab {
+    flex: 1; padding: 6px 8px; border-radius: 6px;
+    font-size: 11.5px; font-weight: 600;
+    color: var(--text-dim); background: transparent;
+    border: none; cursor: pointer;
+  }
+  .repomap-sidebar .tab.active {
+    color: var(--text); background: var(--bg-active);
+  }
+  .repomap-sidebar .search {
+    padding: 0 6px 6px 6px; flex-shrink: 0;
+  }
+  .repomap-sidebar .search input {
+    width: 100%; background: var(--bg-input);
+    border: 1px solid var(--border-soft); border-radius: 6px;
+    padding: 5px 8px; font-size: 11.5px; color: var(--text);
+    outline: none;
+  }
+  .repomap-sidebar .search input:focus { border-color: var(--accent); }
+  .repomap-sidebar .list {
+    flex: 1; overflow-y: auto; padding: 6px;
+  }
+  .rm-list-item {
+    display: block; width: 100%; text-align: left;
+    padding: 4px 8px; border-radius: 6px;
+    font-size: 11.5px; color: var(--text-dim);
+    background: transparent; border: none; cursor: pointer;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .rm-list-item:hover { background: var(--bg-hover); color: var(--text); }
+  .rm-list-item.selected { background: var(--accent-soft); color: var(--accent); }
+  .rm-list-empty {
+    padding: 12px 10px; font-size: 11.5px;
+    color: var(--text-mute); text-align: center;
+  }
+
+  .repomap-main {
+    flex: 1; display: flex; flex-direction: column;
+    min-width: 0; min-height: 0;
+  }
+
+  /* graph view */
+  .repomap-graph-wrap {
+    flex: 1; position: relative; overflow: hidden;
+    background: var(--bg); min-height: 0;
+  }
+  .repomap-graph-wrap svg {
+    width: 100%; height: 100%;
+    cursor: grab; user-select: none; display: block;
+  }
+  .repomap-graph-wrap svg:active { cursor: grabbing; }
+
+  .rm-node { cursor: pointer; transition: opacity .15s; }
+  .rm-node circle { stroke-width: 1.5; transition: r .15s, stroke-width .15s; }
+  .rm-node:hover circle { stroke-width: 3; }
+  .rm-node text {
+    font-size: 9px; fill: var(--text-dim);
+    pointer-events: none; text-anchor: middle;
+  }
+  .rm-node.dim { opacity: 0.15; }
+  .rm-link {
+    stroke: var(--border); stroke-width: 1; fill: none;
+    transition: opacity .15s;
+  }
+  .rm-link.dim { opacity: 0.08; }
+  .rm-link.highlight { stroke: var(--accent); stroke-width: 2; }
+
+  /* tree view */
+  .rm-tree {
+    flex: 1; overflow-y: auto; padding: 10px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px; min-height: 0;
+  }
+  .rm-dir {
+    padding: 3px 0 3px 4px;
+    cursor: pointer; user-select: none;
+    color: var(--text-dim);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .rm-dir:hover { color: var(--text); }
+  .rm-dir .chev { transition: transform .15s; font-size: 9px; }
+  .rm-dir.open .chev { transform: rotate(90deg); }
+  .rm-dir .name { font-weight: 600; }
+  .rm-dir .count {
+    font-size: 10.5px; color: var(--text-mute); margin-left: 4px;
+  }
+  .rm-dir-children {
+    padding-left: 16px; display: none;
+    border-left: 1px dashed var(--border-soft);
+    margin-left: 4px;
+  }
+  .rm-dir-children.open,
+  .rm-dir.open + .rm-dir-children { display: block; }
+
+  .rm-file {
+    padding: 4px 6px; border-radius: 6px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    color: var(--text-dim);
+  }
+  .rm-file:hover { background: var(--bg-hover); color: var(--text); }
+  .rm-file.selected { background: var(--accent-soft); color: var(--accent); }
+  .rm-file .name { flex: 1; min-width: 0; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+  .rm-file .badges {
+    display: flex; gap: 4px; font-size: 10px; color: var(--text-mute);
+  }
+  .rm-file .badges .b {
+    padding: 1px 5px; border-radius: 4px; background: var(--bg-input);
+  }
+  .rm-file .badges .b.in  { color: var(--green); }
+  .rm-file .badges .b.out { color: var(--accent); }
+
+  /* preview pane */
+  .rm-preview {
+    height: 46%; min-height: 220px; flex-shrink: 0;
+    border-top: 1px solid var(--border-soft);
+    display: flex; flex-direction: column;
+    background: var(--bg-side);
+  }
+  .rm-preview-head {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; flex-shrink: 0;
+  }
+  .rm-preview-head .path {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--text-dim); flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .rm-preview-head .info {
+    color: var(--text-mute); font-size: 11px; flex-shrink: 0;
+  }
+  .rm-view-toggle {
+    display: inline-flex; gap: 2px;
+    background: var(--bg-input); border-radius: 6px;
+    padding: 2px; flex-shrink: 0;
+  }
+  .rm-view-toggle button {
+    padding: 3px 9px; border: none; border-radius: 4px;
+    font-size: 10.5px; font-weight: 600;
+    background: transparent; color: var(--text-mute);
+    cursor: pointer;
+  }
+  .rm-view-toggle button.active {
+    background: var(--accent-soft); color: var(--accent);
+  }
+  .rm-viewer {
+    flex: 1; overflow: auto; background: var(--bg-side);
+    position: relative; min-height: 0;
+  }
+  .rm-preview-empty {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-mute); font-size: 12px;
+    min-height: 100%; padding: 20px;
+  }
+
+  /* ── traits view ─────────────────────────────── */
+  .rm-traits { padding: 14px 18px 20px; font-size: 12.5px; }
+  .rm-traits-head {
+    display: flex; align-items: baseline; gap: 10px;
+    flex-wrap: wrap; margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .rm-traits-head .ttl {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px; font-weight: 600; color: var(--text);
+    word-break: break-all;
+  }
+  .rm-traits-head .stats {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .rm-stat {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 999px;
+    font-size: 10.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: var(--bg-input); color: var(--text-dim);
+    border: 1px solid var(--border-soft);
+  }
+  .rm-stat.accent { color: var(--accent); border-color: rgba(164,128,255,0.3); background: rgba(164,128,255,0.08); }
+  .rm-stat.green  { color: var(--green);  border-color: rgba(74,222,128,0.3);  background: rgba(74,222,128,0.08); }
+  .rm-stat.amber  { color: var(--amber);  border-color: rgba(251,191,36,0.3);  background: rgba(251,191,36,0.08); }
+  .rm-stat.muted  { color: var(--text-mute); }
+
+  .rm-section {
+    margin-bottom: 16px;
+  }
+  .rm-section-title {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: 0.7px; color: var(--text-mute);
+    margin-bottom: 6px;
+  }
+  .rm-section-title .count {
+    color: var(--text-dim); font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0; text-transform: none;
+  }
+  .rm-rows { display: flex; flex-direction: column; gap: 2px; }
+
+  .rm-sym {
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 3px 8px; border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px; line-height: 1.45;
+  }
+  .rm-sym:hover { background: var(--bg-hover); }
+  .rm-sym .kind {
+    flex-shrink: 0; font-size: 9.5px;
+    padding: 1px 6px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.3px;
+    font-weight: 700;
+  }
+  .rm-sym.k-class .kind { background: rgba(164,128,255,0.18); color: var(--accent); }
+  .rm-sym.k-func  .kind { background: rgba(103,232,249,0.15); color: #67e8f9; }
+  .rm-sym.k-async .kind { background: rgba(125,211,252,0.18); color: #7dd3fc; }
+  .rm-sym.k-method .kind { background: rgba(148,163,184,0.18); color: #94a3b8; }
+  .rm-sym.k-def   .kind { background: rgba(148,163,184,0.14); color: #94a3b8; }
+  .rm-sym .sig {
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    color: var(--text-dim);
+  }
+  .rm-sym.k-class  .sig { color: var(--text); }
+  .rm-sym.k-func   .sig { color: var(--text); }
+  .rm-sym.k-async  .sig { color: var(--text); }
+  .rm-sym.k-method .sig { color: var(--text-dim); padding-left: 12px; }
+
+  .rm-link-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 8px; border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px; color: var(--text-dim);
+    background: transparent; border: none;
+    text-align: left; width: 100%;
+    cursor: pointer;
+  }
+  .rm-link-row:hover { background: var(--bg-hover); color: var(--accent); }
+  .rm-link-row .arrow { flex-shrink: 0; color: var(--text-mute); }
+  .rm-link-row:hover .arrow { color: var(--accent); }
+  .rm-link-row .p { flex: 1; min-width: 0; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+
+  .rm-chips {
+    display: flex; flex-wrap: wrap; gap: 4px;
+  }
+  .rm-chips .rm-chip {
+    display: inline-block;
+    padding: 2px 8px; border-radius: 999px;
+    font-size: 11px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: var(--bg-input); color: var(--text-dim);
+    border: 1px solid var(--border-soft);
+  }
+  .rm-chips .rm-chip.more { color: var(--text-mute); font-style: italic; }
+
+  .rm-empty-note {
+    padding: 10px 12px; border-radius: 8px;
+    font-size: 12px; line-height: 1.5;
+    background: rgba(251,191,36,0.05);
+    border: 1px solid rgba(251,191,36,0.2);
+    color: var(--text-dim);
+  }
+  .rm-empty-note b { color: var(--amber); }
+
+  /* raw view (kept as a toggle fallback) */
+  .rm-viewer pre.rm-code {
+    margin: 0; padding: 12px 14px;
+    font-size: 12px; line-height: 1.5;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    white-space: pre-wrap; word-break: break-word;
+    color: var(--text); background: var(--pre-bg);
+  }
+  .rm-viewer pre.rm-code code {
+    background: transparent; padding: 0;
+    font-size: inherit; color: inherit;
+  }
+
+  /* controls */
+  .rm-controls {
+    display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+  }
+  .rm-btn {
+    padding: 4px 10px; border-radius: 6px; font-size: 11.5px;
+    font-weight: 500; cursor: pointer;
+    background: var(--bg-input); color: var(--text);
+    border: 1px solid var(--border-soft);
+    transition: background .12s, border-color .12s;
+    white-space: nowrap;
+  }
+  .rm-btn:hover { background: var(--bg-hover); border-color: var(--border); }
+  .rm-btn.primary {
+    background: var(--accent); color: var(--accent-fg);
+    border-color: var(--accent);
+  }
+  .rm-btn.primary:hover { background: var(--accent-hi); }
+  .rm-btn:disabled { opacity: 0.55; cursor: default; }
+
+  .rm-legend {
+    position: absolute; left: 12px; bottom: 12px;
+    background: var(--bg-side); border: 1px solid var(--border-soft);
+    border-radius: 8px; padding: 8px 10px; font-size: 11px;
+    color: var(--text-mute); z-index: 2;
+    display: flex; flex-direction: column; gap: 4px;
+    max-width: 220px; pointer-events: none;
+  }
+  .rm-legend .row { display: flex; align-items: center; gap: 6px; padding: 0; border: none; }
+  .rm-legend .swatch {
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 1px solid var(--border);
+  }
+  .rm-tooltip {
+    position: absolute; pointer-events: none;
+    background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 11.5px;
+    color: var(--text); z-index: 10; max-width: 320px;
+    box-shadow: 0 8px 24px var(--shadow);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.4; display: none;
+  }
+  .rm-tooltip .p {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--text-dim); font-size: 11px;
+    margin-bottom: 4px; word-break: break-all;
+  }
+  .rm-tooltip .s { color: var(--text-mute); font-style: italic; }
+</style>
+</head>
+<body class="flex overflow-hidden">
+
+<div id="sidebarBackdrop"></div>
+
+<aside id="sidebar" class="flex-col border-r" style="background: var(--bg-side); border-color: var(--border-soft);">
+  <div class="p-3 flex items-center gap-2 flex-shrink-0">
+    <span class="brand-dot" id="brandDot" title="Astronaut AI"></span>
+    <span class="font-semibold text-sm">Astronaut AI</span>
+    <button id="closeSidebar" class="icon-btn ml-auto mobile-only" title="Close">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <button id="collapseSidebar" class="icon-btn ml-auto desktop-only" title="Collapse">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+  </div>
+
+  <div class="px-2 pb-2 flex-shrink-0">
+    <button id="newChat" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-[var(--bg-hover)] transition" style="color: var(--text);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      New chat
+    </button>
+  </div>
+
+  <div id="sessionList" class="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5"></div>
+
+  <div class="p-2 border-t flex-shrink-0" style="border-color: var(--border-soft);">
+    <button id="openSettings" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-[var(--bg-hover)] transition">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01A1.65 1.65 0 0 0 10 3.09V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+    <div class="mt-1 px-3 py-1.5 text-[11px] truncate" style="color: var(--text-mute);">
+      <span id="sbProvider">—</span> · <span id="sbModel">—</span>
+    </div>
+  </div>
+</aside>
+
+<main class="flex-1 flex flex-col min-w-0 relative">
+
+  <header id="mainHeader" class="h-12 flex items-center gap-2 sm:gap-3 border-b flex-shrink-0" style="border-color: var(--border-soft);">
+    <button id="openSidebar" class="icon-btn" title="Menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <button id="expandSidebar" class="icon-btn hidden desktop-only" title="Show sidebar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+
+    <div id="chatTitle" class="text-sm font-medium truncate flex-1 min-w-0" style="color: var(--text);">New chat</div>
+
+    <button id="modelPicker" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs hover:bg-[var(--bg-hover)] transition flex-shrink-0" style="background: var(--bg-input); color: var(--text);">
+      <span id="modelLabel" class="max-w-[160px] truncate">model</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+
+    <button id="modelPickerMobile" class="icon-btn sm:hidden" title="Model">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 9h6v6H9z"/></svg>
+    </button>
+
+    <button id="openRepomap" class="icon-btn" title="Repo map">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="6" cy="6" r="2.5"/>
+        <circle cx="18" cy="6" r="2.5"/>
+        <circle cx="12" cy="18" r="2.5"/>
+        <path d="M8 7l3 9M16 7l-3 9"/>
+      </svg>
+    </button>
+
+    <button id="clearChat" class="icon-btn" title="Clear chat">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+    </button>
+  </header>
+
+  <div id="chat" class="flex-1 overflow-y-auto">
+    <div id="chatInner" class="max-w-full md:max-w-2xl lg:max-w-3xl mx-auto py-6"></div>
+  </div>
+
+  <button id="scrollBtn" title="Scroll to bottom">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+  </button>
+
+  <footer id="mainFooter" class="flex-shrink-0 pt-2">
+    <div class="max-w-full md:max-w-2xl lg:max-w-3xl mx-auto">
+
+      <div id="confirmBar" class="hidden mb-2 p-2.5 sm:p-3 rounded-xl flex items-center gap-2 sm:gap-3 text-xs fade-in"
+           style="background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.3); color: var(--amber);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="flex-shrink-0"><path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        <div class="flex-1 min-w-0">
+          <div class="font-semibold truncate">Permission required</div>
+          <div class="truncate mt-0.5" style="color: var(--text-mute);">
+            <span id="confirmName" class="font-mono" style="color: var(--text-dim);"></span>
+          </div>
+        </div>
+        <button id="confirmYes" class="btn btn-primary" style="padding: 5px 12px; font-size:12px;">Allow</button>
+        <button id="confirmNo" class="btn btn-secondary" style="padding: 5px 12px; font-size:12px;">Deny</button>
+      </div>
+
+      <div id="pinStrip" class="pin-strip">
+        <button id="pinFilesBtn" class="pin-btn" title="Pin files to every message">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 17v5M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>
+          </svg>
+          <span>Files</span>
+          <span id="pinFilesCount" class="pin-badge">0/10</span>
+        </button>
+
+        <div id="pinFilesPreview" class="pin-chips"></div>
+
+        <button id="pinGitBtn" class="pin-btn git none" title="Git branch">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="6" y1="3" x2="6" y2="15"/>
+            <circle cx="18" cy="6" r="3"/>
+            <circle cx="6" cy="18" r="3"/>
+            <path d="M18 9a9 9 0 0 1-9 9"/>
+          </svg>
+          <span id="pinGitBranch">no git</span>
+        </button>
+
+        <div class="pin-ws" id="pinWs" title="Click to pick another workspace folder">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span id="pinWsPath">—</span>
+        </div>
+      </div>
+
+      <div class="rounded-2xl overflow-hidden" style="background: var(--bg-input); border: 1px solid var(--border-soft);">
+        <div class="flex items-end gap-1 sm:gap-1.5 p-1.5 sm:p-2">
+
+          <button id="attachBtn" class="input-btn" title="Attach file">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+            </svg>
+          </button>
+
+          <textarea id="input" rows="1"
+            placeholder="Message Astronaut AI…"
+            class="flex-1 bg-transparent outline-none resize-none px-2 py-2 text-[16px] sm:text-sm"
+            style="color: var(--text); max-height: 240px; min-height: 40px;"></textarea>
+
+          <button id="planningToggle" class="input-btn" title="Planning mode">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+          </button>
+
+          <button id="thinkingToggle" class="input-btn hidden" title="Thinking mode (Qwen3)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V18h6v-1.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/>
+            </svg>
+          </button>
+
+          <button id="verifierToggle" class="input-btn" title="Self-verification">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2l8 4v6c0 5-3.4 9.4-8 10-4.6-.6-8-5-8-10V6z"/>
+              <path d="M9 12l2 2 4-4"/>
+            </svg>
+          </button>
+
+          <button id="send" class="input-btn send" title="Send">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          </button>
+        </div>
+        <div class="hidden sm:flex items-center gap-3 px-4 pb-2 text-[11px]" style="color: var(--text-mute);">
+          <span>Shift + Enter for newline</span>
+          <span id="statusText" class="ml-auto truncate"></span>
+        </div>
+        <div class="sm:hidden flex items-center gap-2 px-3 pb-2 text-[10px]" style="color: var(--text-mute);">
+          <span id="statusTextMobile" class="truncate"></span>
+        </div>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<div id="settingsModal" class="hidden fixed inset-0 z-50 modal-backdrop" style="z-index: 70;">
+  <div class="absolute inset-0 flex items-stretch md:items-center md:justify-center p-0 md:p-6">
+    <div class="modal-shell">
+      <div id="settingsTabs">
+        <button data-tab="general"   class="tab-btn">General</button>
+        <button data-tab="providers" class="tab-btn">Providers</button>
+        <button data-tab="tools"     class="tab-btn">Tools</button>
+        <button data-tab="mcp"       class="tab-btn">MCP</button>
+        <button data-tab="workspace" class="tab-btn">Workspace</button>
+        <button data-tab="about"     class="tab-btn">About</button>
+      </div>
+      <div id="settingsPanel">
+        <div class="flex items-center justify-between px-4 sm:px-5 py-3 border-b flex-shrink-0" style="border-color: var(--border-soft);">
+          <div id="settingsTitle" class="text-sm font-semibold">General</div>
+          <button id="closeSettings" class="icon-btn w-10 h-10 sm:w-7 sm:h-7">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div id="settingsBody"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="filePicker" class="hidden fixed inset-0 z-[55] modal-backdrop" style="z-index: 75;">
+  <div class="absolute inset-0 flex items-end md:items-center md:justify-center p-0 md:p-6">
+    <div class="w-full h-[70vh] md:w-full md:max-w-lg md:h-auto md:max-h-[70vh] rounded-t-2xl md:rounded-2xl flex flex-col overflow-hidden fade-in"
+         style="background: var(--bg); border: 1px solid var(--border); box-shadow: 0 24px 64px rgba(0,0,0,0.5); padding-bottom: env(safe-area-inset-bottom);">
+      <div class="flex items-center gap-2 p-3 border-b flex-shrink-0" style="border-color: var(--border-soft);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+        </svg>
+        <div id="filePickerTitle" class="text-sm font-medium">Attach files</div>
+        <button id="filePickerClose" class="icon-btn ml-auto w-10 h-10 sm:w-7 sm:h-7">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="p-3 border-b flex-shrink-0" style="border-color: var(--border-soft);">
+        <input id="filePickerSearch" class="field" placeholder="Search workspace files…" autocomplete="off" spellcheck="false">
+      </div>
+      <div id="filePickerList" class="flex-1 overflow-y-auto p-1"></div>
+      <div class="px-4 py-2.5 border-t text-[11px] flex items-center gap-2 flex-shrink-0"
+           style="border-color: var(--border-soft); color: var(--text-mute);">
+        <span id="filePickerHint">Click a file to attach. Inserts <code style="color:var(--accent);">!- path -!</code></span>
+        <span id="filePickerCount" class="ml-auto"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modelMenu" class="hidden">
+  <div class="p-2 pt-4 sm:pt-2 max-h-[60vh] overflow-y-auto" id="modelMenuList"></div>
+  <div class="px-3 py-2 text-[11px] border-t hidden sm:flex items-center gap-2" style="border-color: var(--border-soft); color: var(--text-mute);">
+    <span class="chip cloud" style="font-size:9.5px;">☁ cloud</span>
+    <span class="chip think" style="font-size:9.5px;">💡 thinking</span>
+    <span class="ml-auto">ollama pull &lt;model&gt;</span>
+  </div>
+</div>
+
+<div id="pinMenu" class="pin-menu hidden"></div>
+
+<!-- ═══════════════════ REPOMAP PANEL ═══════════════════ -->
+<div id="repomapOverlay" class="repomap-overlay hidden"></div>
+<div id="repomapPanel" class="repomap-panel hidden">
+
+  <div class="repomap-header">
+    <div class="title">
+      <span class="dot"></span>
+      Repo map
+    </div>
+    <span class="meta" id="repomapMeta">—</span>
+
+    <div class="spacer"></div>
+
+    <div class="rm-controls">
+      <button id="rmFit" class="rm-btn" title="Fit graph to view">Fit</button>
+      <button id="rmRefresh" class="rm-btn" title="Rebuild the map from disk">Refresh</button>
+      <button id="rmSummaries" class="rm-btn" title="Generate one-line summaries for every file (slow, cached)">Summaries</button>
+      <button id="rmClose" class="icon-btn" title="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="repomap-body">
+
+    <div class="repomap-sidebar">
+      <div class="tabs">
+        <button class="tab active" data-view="graph">Graph</button>
+        <button class="tab" data-view="tree">Tree</button>
+      </div>
+      <div class="search">
+        <input id="rmSearch" placeholder="Filter files…" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="list" id="rmList"></div>
+    </div>
+
+    <div class="repomap-main">
+
+      <div id="rmGraphView" class="repomap-graph-wrap">
+        <svg id="rmSvg"></svg>
+        <div class="rm-legend">
+          <div class="row"><span class="swatch" style="background:#a480ff"></span> Python</div>
+          <div class="row"><span class="swatch" style="background:#67e8f9"></span> JavaScript / TypeScript</div>
+          <div class="row"><span class="swatch" style="background:#fbbf24"></span> UI (html/css)</div>
+          <div class="row"><span class="swatch" style="background:#4ade80"></span> Test</div>
+          <div class="row"><span class="swatch" style="background:#f87171"></span> Config</div>
+          <div class="row"><span class="swatch" style="background:#8d93aa"></span> Docs / other</div>
+          <div class="row" style="margin-top:4px;font-size:10.5px">
+            size = rank · arrow = import
+          </div>
+        </div>
+        <div class="rm-tooltip" id="rmTooltip"></div>
+      </div>
+
+      <div id="rmTreeView" class="rm-tree hidden"></div>
+
+      <div class="rm-preview">
+        <div class="rm-preview-head">
+          <span class="path" id="rmPreviewPath">— select a file —</span>
+          <span class="info" id="rmPreviewInfo"></span>
+          <div class="rm-view-toggle" id="rmViewToggle" style="display:none">
+            <button data-mode="traits" class="active">Traits</button>
+            <button data-mode="raw">Raw</button>
+          </div>
+        </div>
+        <div class="rm-viewer" id="rmViewer">
+          <div class="rm-preview-empty" id="rmPreviewEmpty">
+            Click a node or file to see what the repomap extracted from it.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div id="toasts"></div>
+
+<script>
+const S = {
+  sid: null, provider: null, model: null, workspace: null, mode: null,
+  es: null, busy: false,
+  assistantEl: null, assistantRaw: "",
+  thinkingEl: null, thinkingRaw: "",
+  toolBlocks: {}, confirmReq: null,
+  models: [], sessions: [], tools: [], providers: [], mcp: [], settings: {},
+  userScrolled: false, sidebarOpen: false,
+  thinkingSupported: false, thinkingOn: false, verifierOn: true,
+  planningOn: false,
+  currentPlanEl: null, currentPlanSteps: [],
+  agentsBannerEl: null,
+  pinnedFiles: [],
+  pinnedGitBranch: "",
+  filePickerMode: "attach",
+  pinMenuFor: null,
+
+  /* repomap */
+  _rmRaw: null, _rmGraph: null, _rmTree: null,
+  _rmView: "graph", _rmSim: null, _rmSelected: null,
+  _rmFitted: false,
+  _rmViewerMode: "traits",   /* "traits" | "raw" */
+};
+
+const $ = (id) => document.getElementById(id);
+const chatEl = $("chat");
+const chatInner = $("chatInner");
+const inputEl = $("input");
+const sendBtn = $("send");
+const sidebar = $("sidebar");
+const sidebarBackdrop = $("sidebarBackdrop");
+const isMobile = () => window.matchMedia("(max-width: 1023px)").matches;
+function modelIsThinking(name) { return /qwen3/i.test(name || ""); }
+
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c =>
+    ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function md(text) {
+  if (!text) return "";
+  try { return marked.parse(text, { breaks: true, gfm: true }); }
+  catch { return escapeHtml(text); }
+}
+function toast(msg, kind = "") {
+  const t = document.createElement("div");
+  t.className = `toast ${kind}`;
+  t.textContent = msg;
+  $("toasts").appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+function humanSize(n) {
+  if (n < 1024) return n + " B";
+  if (n < 1024*1024) return (n/1024).toFixed(1) + " KB";
+  return (n/1024/1024).toFixed(1) + " MB";
+}
+function shortPath(p, max = 42) {
+  if (!p) return "";
+  if (p.length <= max) return p;
+  return "…" + p.slice(-(max - 1));
+}
+
+const api = {
+  get:  (u)    => fetch(u).then(r => r.json()),
+  post: (u, b) => fetch(u, {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(b ?? {})}).then(r => r.json()),
+  del:  (u)    => fetch(u, {method:"DELETE"}).then(r => r.json()),
+};
+
+function highlightIn(root) {
+  if (!window.hljs || !root) return;
+  try {
+    root.querySelectorAll("pre code").forEach(code => {
+      if (code.dataset.highlighted === "yes") return;
+      try { hljs.highlightElement(code); code.dataset.highlighted = "yes"; } catch (_) {}
+    });
+  } catch (_) {}
+}
+
+function setBrandDot(state) {
+  const d = $("brandDot");
+  if (!d) return;
+  d.classList.remove("idle", "busy", "error");
+  if (state) d.classList.add(state);
+}
+
+/* NATIVE PICKERS */
+const hasNativeFilePicker = () =>
+  !!(window.pywebview && window.pywebview.api && window.pywebview.api.pick_file);
+const hasNativeFolderPicker = () =>
+  !!(window.pywebview && window.pywebview.api && window.pywebview.api.pick_folder);
+
+async function nativePickFiles() {
+  if (!hasNativeFilePicker()) return null;
+  try {
+    const paths = await window.pywebview.api.pick_file();
+    if (Array.isArray(paths) && paths.length) return paths;
+    return [];
+  } catch (e) {
+    console.warn("native pick_file failed:", e);
+    return null;
+  }
+}
+async function nativePickFolder() {
+  if (!hasNativeFolderPicker()) return null;
+  try {
+    const path = await window.pywebview.api.pick_folder();
+    return path || "";
+  } catch (e) {
+    console.warn("native pick_folder failed:", e);
+    return null;
+  }
+}
+
+function toRelative(absPath) {
+  if (!S.workspace) return String(absPath);
+  const ws = S.workspace.replace(/\\/g, "/").replace(/\/+$/, "");
+  const p  = String(absPath).replace(/\\/g, "/");
+  if (p === ws) return ".";
+  if (p.startsWith(ws + "/")) return p.slice(ws.length + 1);
+  return absPath;
+}
+
+async function pinFilesViaNative() {
+  const paths = await nativePickFiles();
+  if (paths === null) { openFilePicker("pin"); return; }
+  if (!paths.length) return;
+
+  let added = 0;
+  for (const abs of paths) {
+    const rel = toRelative(abs);
+    if (S.pinnedFiles.includes(rel)) continue;
+    if (S.pinnedFiles.length >= 10) { toast("Max 10 file pins", "error"); break; }
+    const r = await api.post("/api/pins/add", { path: rel });
+    if (r.error) { toast(r.error, "error"); continue; }
+    S.pinnedFiles = r.files || S.pinnedFiles;
+    added++;
+  }
+  renderPinFiles();
+  if (added) toast(`Pinned ${added} file${added > 1 ? "s" : ""}`, "success");
+}
+
+async function pickWorkspaceViaNative() {
+  const path = await nativePickFolder();
+  if (path === null) {
+    $("settingsModal").classList.remove("hidden");
+    openTab("workspace");
+    setTimeout(() => $("wsPath")?.focus(), 100);
+    return;
+  }
+  if (!path) return;
+  await applyWorkspace(path);
+}
+
+async function applyWorkspace(newPath) {
+  const r = await api.post("/api/workspace", { sid: S.sid, path: newPath });
+  if (r.error) { toast(r.error, "error"); return; }
+  S.workspace = r.workspace;
+  renderWsPath();
+  await loadPins();
+  await refreshGit();
+  toast("Workspace: " + shortPath(S.workspace, 40), "success");
+}
+
+/* SIDEBAR */
+function openSidebar() { S.sidebarOpen = true; sidebar.classList.add("open"); sidebarBackdrop.classList.add("show"); }
+function closeSidebar() { S.sidebarOpen = false; sidebar.classList.remove("open"); sidebarBackdrop.classList.remove("show"); }
+$("openSidebar").onclick  = openSidebar;
+$("closeSidebar").onclick = closeSidebar;
+sidebarBackdrop.onclick   = closeSidebar;
+$("collapseSidebar").onclick = () => {
+  sidebar.style.display = "none";
+  $("expandSidebar").classList.remove("hidden");
+  $("openSidebar").classList.remove("hidden");
+};
+$("expandSidebar").onclick = () => {
+  sidebar.style.display = "flex";
+  $("expandSidebar").classList.add("hidden");
+};
+
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (!$("settingsModal").classList.contains("hidden")) { $("settingsModal").classList.add("hidden"); return; }
+  if (!$("repomapPanel").classList.contains("hidden")) { closeRepomap(); return; }
+  if (!$("filePicker").classList.contains("hidden")) { closeFilePicker(); return; }
+  if (!$("pinMenu").classList.contains("hidden")) { closePinMenu(); return; }
+  if (S.sidebarOpen) closeSidebar();
+});
+
+/* SCROLL */
+function scrollToBottom(force = false) {
+  if (!S.userScrolled || force) chatEl.scrollTop = chatEl.scrollHeight;
+}
+chatEl.addEventListener("scroll", () => {
+  const near = chatEl.scrollHeight - chatEl.scrollTop - chatEl.clientHeight < 60;
+  S.userScrolled = !near;
+  $("scrollBtn").classList.toggle("show", S.userScrolled);
+});
+$("scrollBtn").onclick = () => { S.userScrolled = false; scrollToBottom(true); };
+
+/* PINS */
+function renderPinFiles() {
+  const box = $("pinFilesPreview");
+  box.innerHTML = "";
+  for (const p of S.pinnedFiles) {
+    const name = p.split(/[\\/]/).pop() || p;
+    const chip = document.createElement("span");
+    chip.className = "pin-file-chip";
+    chip.title = p;
+    chip.innerHTML = `<span class="name">${escapeHtml(name)}</span><button class="x" title="Unpin">×</button>`;
+    chip.querySelector(".x").onclick = async (e) => {
+      e.stopPropagation();
+      await api.post("/api/pins/remove", { path: p });
+      S.pinnedFiles = S.pinnedFiles.filter(x => x !== p);
+      renderPinFiles();
+    };
+    box.appendChild(chip);
+  }
+  const btn = $("pinFilesBtn");
+  $("pinFilesCount").textContent = `${S.pinnedFiles.length}/10`;
+  btn.classList.toggle("active", S.pinnedFiles.length > 0);
+}
+function renderGitPin() {
+  const btn = $("pinGitBtn");
+  const nameEl = $("pinGitBranch");
+  if (S.pinnedGitBranch) {
+    nameEl.textContent = S.pinnedGitBranch;
+    btn.classList.remove("none");
+  } else {
+    nameEl.textContent = "no git";
+    btn.classList.add("none");
+  }
+}
+function renderWsPath() {
+  $("pinWsPath").textContent = shortPath(S.workspace || "—", 38);
+  $("pinWs").title = (S.workspace || "") + "\n(click to pick another folder)";
+}
+async function loadPins() {
+  try {
+    const data = await api.get("/api/pins");
+    S.pinnedFiles = Array.isArray(data.files) ? data.files : [];
+    S.pinnedGitBranch = (data.git && data.git.branch) || "";
+  } catch (_) {
+    S.pinnedFiles = [];
+    S.pinnedGitBranch = "";
+  }
+  renderPinFiles();
+}
+async function refreshGit() {
+  try {
+    const r = await api.get("/api/git/status");
+    if (!r.is_repo) { S.pinnedGitBranch = ""; renderGitPin(); return; }
+    S.pinnedGitBranch = r.current || "";
+    renderGitPin();
+  } catch (_) {}
+}
+function closePinMenu() {
+  $("pinMenu").classList.add("hidden");
+  S.pinMenuFor = null;
+}
+function openPinMenuForFiles(anchor) {
+  const menu = $("pinMenu");
+  if (S.pinMenuFor === "files") { closePinMenu(); return; }
+  menu.innerHTML = `
+    <div class="pin-menu-head">Pinned files · ${S.pinnedFiles.length}/10</div>
+    <button class="pin-menu-item" id="pmAdd">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      ${hasNativeFilePicker() ? "Pin files (native picker)…" : "Pin a file…"}
+    </button>
+    ${S.pinnedFiles.length ? `<button class="pin-menu-item" id="pmClear">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      Unpin all
+    </button>` : ""}
+    ${S.pinnedFiles.map(p => `
+      <button class="pin-menu-item" data-path="${escapeHtml(p)}" title="${escapeHtml(p)}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <path d="M14 2v6h6"/>
+        </svg>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;">${escapeHtml(p)}</span>
+        <span class="meta">×</span>
+      </button>`).join("")}
+  `;
+  menu.querySelector("#pmAdd").onclick = () => { closePinMenu(); pinFilesViaNative(); };
+  const clr = menu.querySelector("#pmClear");
+  if (clr) clr.onclick = async () => {
+    await api.post("/api/pins/clear", {});
+    S.pinnedFiles = [];
+    renderPinFiles();
+    closePinMenu();
+  };
+  menu.querySelectorAll("[data-path]").forEach(el => {
+    el.onclick = async () => {
+      const p = el.dataset.path;
+      await api.post("/api/pins/remove", { path: p });
+      S.pinnedFiles = S.pinnedFiles.filter(x => x !== p);
+      renderPinFiles();
+      closePinMenu();
+    };
+  });
+  positionMenu(menu, anchor);
+  menu.classList.remove("hidden");
+  S.pinMenuFor = "files";
+}
+async function openPinMenuForGit(anchor) {
+  const menu = $("pinMenu");
+  if (S.pinMenuFor === "git") { closePinMenu(); return; }
+  menu.innerHTML = `<div class="pin-menu-empty">Loading branches…</div>`;
+  positionMenu(menu, anchor);
+  menu.classList.remove("hidden");
+  S.pinMenuFor = "git";
+
+  let r;
+  try { r = await api.get("/api/git/status"); }
+  catch (e) { r = { is_repo: false, branches: [], current: "", error: String(e) }; }
+
+  if (!r.is_repo) {
+    menu.innerHTML = `<div class="pin-menu-empty">
+      Not a git repository.
+      <div style="margin-top:6px;font-size:11px;color:var(--text-mute);">
+        Initialize one with <code style="color:var(--accent);">git init</code> in the workspace.
+      </div>
+    </div>`;
+    return;
+  }
+  menu.innerHTML = `
+    <div class="pin-menu-head">Branch · ${escapeHtml(r.current || "?")}</div>
+    ${r.branches.length ? r.branches.map(b => `
+      <button class="pin-menu-item ${b === r.current ? "active" : ""}" data-branch="${escapeHtml(b)}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="6" y1="3" x2="6" y2="15"/>
+          <circle cx="18" cy="6" r="3"/>
+          <circle cx="6" cy="18" r="3"/>
+          <path d="M18 9a9 9 0 0 1-9 9"/>
+        </svg>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;">${escapeHtml(b)}</span>
+        ${b === r.current ? `<span class="meta">current</span>` : ""}
+      </button>`).join("") : `<div class="pin-menu-empty">No branches yet.</div>`}
+  `;
+  menu.querySelectorAll("[data-branch]").forEach(el => {
+    el.onclick = async () => {
+      const b = el.dataset.branch;
+      if (b === r.current) { closePinMenu(); return; }
+      el.innerHTML = `<span style="color:var(--text-mute);">Checking out ${escapeHtml(b)}…</span>`;
+      const res = await api.post("/api/git/checkout", { branch: b });
+      if (res.error) { toast(res.error, "error"); closePinMenu(); return; }
+      S.pinnedGitBranch = res.current || b;
+      renderGitPin();
+      toast("Switched to " + S.pinnedGitBranch, "success");
+      closePinMenu();
+    };
+  });
+}
+function positionMenu(menu, anchor) {
+  const rect = anchor.getBoundingClientRect();
+  menu.style.top = ""; menu.style.bottom = ""; menu.style.left = ""; menu.style.right = "";
+  const gap = 6;
+  const vh = window.innerHeight;
+  const mh = Math.min(menu.offsetHeight || 320, vh * 0.6);
+  const spaceBelow = vh - rect.bottom;
+  if (spaceBelow < mh + 20) menu.style.bottom = (vh - rect.top + gap) + "px";
+  else                       menu.style.top    = (rect.bottom + gap) + "px";
+  menu.style.left = Math.min(rect.left, window.innerWidth - 320) + "px";
+}
+$("pinFilesBtn").onclick = (e) => { e.stopPropagation(); openPinMenuForFiles(e.currentTarget); };
+$("pinGitBtn").onclick   = (e) => { e.stopPropagation(); openPinMenuForGit(e.currentTarget); };
+$("pinWs").onclick = (e) => { e.stopPropagation(); closePinMenu(); pickWorkspaceViaNative(); };
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#pinMenu") &&
+      !e.target.closest("#pinFilesBtn") &&
+      !e.target.closest("#pinGitBtn")) closePinMenu();
+});
+
+/* USER MESSAGE */
+function renderUserBody(text) {
+  if (!text) return "";
+  let out = "";
+  let last = 0;
+  const re = /!-\s*([^\n\r]+?)\s*-!/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    out += escapeHtml(text.slice(last, m.index));
+    const p = m[1];
+    const name = p.split(/[\\/]/).pop() || p;
+    out += `<span class="attach-chip" title="${escapeHtml(p)}">📎 <span class="name">${escapeHtml(name)}</span></span>`;
+    last = m.index + m[0].length;
+  }
+  out += escapeHtml(text.slice(last));
+  return out;
+}
+function addUserMessage(text, opts = {}) {
+  const div = document.createElement("div");
+  div.className = "msg flex justify-end mb-5 sm:mb-6 fade-in";
+  div.innerHTML = `
+    <div class="max-w-[92%] sm:max-w-[85%] flex flex-col items-end gap-1">
+      <div class="px-3.5 sm:px-4 py-2.5 rounded-2xl whitespace-pre-wrap break-words text-[14px] sm:text-[14.5px]"
+           style="background: var(--bg-user); color: var(--text);">${renderUserBody(text)}</div>
+      <div class="msg-actions flex gap-0.5 mt-1">
+        <button class="icon-btn copy-btn" title="Copy">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        ${opts.editable ? `
+        <button class="icon-btn edit-btn" title="Edit & resend">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+        </button>` : ""}
+      </div>
+    </div>`;
+  div.querySelector(".copy-btn").onclick = () => copy(text);
+  if (opts.editable) {
+    div.querySelector(".edit-btn").onclick = () => {
+      inputEl.value = text;
+      inputEl.focus();
+      autoGrow();
+    };
+  }
+  chatInner.appendChild(div);
+  scrollToBottom();
+}
+
+/* PLAN */
+function renderPlan(steps) {
+  const panel = document.createElement("div");
+  panel.className = "plan-panel";
+  panel.innerHTML = `
+    <div class="plan-head">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+      Plan
+      <span class="plan-count">${steps.length} step${steps.length !== 1 ? "s" : ""}</span>
+    </div>
+    <div class="plan-body"></div>`;
+  const body = panel.querySelector(".plan-body");
+  for (const s of steps) {
+    const row = document.createElement("div");
+    row.className = "plan-step";
+    row.dataset.step = s.n;
+    row.innerHTML = `
+      <div class="ps-marker">${s.n}</div>
+      <div class="ps-body">
+        <div class="ps-title">${escapeHtml(s.title)}</div>
+        ${s.detail ? `<div class="ps-detail">${escapeHtml(s.detail)}</div>` : ""}
+      </div>`;
+    body.appendChild(row);
+  }
+  chatInner.appendChild(panel);
+  S.currentPlanEl = panel;
+  S.currentPlanSteps = steps;
+  scrollToBottom();
+}
+function markPlanStep(n) {
+  if (!S.currentPlanEl || !n) return;
+  S.currentPlanEl.querySelectorAll(".plan-step").forEach(el => {
+    const idx = parseInt(el.dataset.step, 10);
+    el.classList.toggle("active", idx === n);
+    if (idx < n) {
+      el.classList.remove("active");
+      el.classList.add("done");
+      el.querySelector(".ps-marker").innerHTML = "✓";
+    }
+  });
+  scrollToBottom();
+}
+function completePlan() {
+  if (!S.currentPlanEl) return;
+  S.currentPlanEl.querySelectorAll(".plan-step").forEach(el => {
+    el.classList.remove("active"); el.classList.add("done");
+    el.querySelector(".ps-marker").innerHTML = "✓";
+  });
+  S.currentPlanEl = null;
+  S.currentPlanSteps = [];
+}
+function abortPlan() {
+  if (!S.currentPlanEl) return;
+  S.currentPlanEl.classList.add("aborted");
+  S.currentPlanEl.querySelectorAll(".plan-step.active").forEach(el => el.classList.remove("active"));
+  S.currentPlanEl = null;
+  S.currentPlanSteps = [];
+}
+function clearPlanOnNewTurn() {
+  S.currentPlanEl = null;
+  S.currentPlanSteps = [];
+}
+
+/* AGENTS BANNER */
+function renderAgentsBanner(files) {
+  if (!Array.isArray(files) || !files.length) return;
+  if (S.agentsBannerEl) S.agentsBannerEl.remove();
+  const names = files.map(f => f.rel).join(", ");
+  const details = files.map(f => `  ${f.rel}  (${f.size} B)${f.truncated ? "  [truncated]" : ""}`).join("\n");
+  const el = document.createElement("div");
+  el.className = "agents-banner";
+  el.innerHTML = `
+    <svg class="ab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <path d="M14 2v6h6"/>
+      <path d="M9 13h6M9 17h6"/>
+    </svg>
+    <span class="ab-text">
+      <span class="ab-files">${escapeHtml(names)}</span>
+      ${files.length > 1 ? ` +${files.length - 1} more` : ""} loaded as project instructions
+    </span>
+    <button class="ab-toggle" type="button">details</button>
+    <div class="ab-details">${escapeHtml(details)}</div>`;
+  el.querySelector(".ab-toggle").onclick = () => el.classList.toggle("open");
+  chatInner.insertBefore(el, chatInner.firstChild);
+  S.agentsBannerEl = el;
+}
+
+/* ASSISTANT */
+function startAssistant() {
+  S.assistantRaw = "";
+  S.thinkingRaw = "";
+  S.thinkingEl = null;
+  const div = document.createElement("div");
+  div.className = "msg mb-5 sm:mb-6 fade-in";
+  div.innerHTML = `
+    <div class="flex items-center gap-2 mb-2">
+      <span class="brand-dot" style="width:8px;height:8px;"></span>
+      <span class="text-xs font-medium" style="color: var(--text-dim);">Astronaut AI</span>
+    </div>
+    <div class="thinkingSlot"></div>
+    <div class="assistantBody md"></div>
+    <div class="msg-actions flex gap-0.5 mt-2">
+      <button class="icon-btn copy-btn" title="Copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+      <button class="icon-btn regen-btn" title="Regenerate"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M3 4v5h5M21 12a9 9 0 0 1-15 6.7L3 16M21 20v-5h-5"/></svg></button>
+    </div>`;
+  div.querySelector(".copy-btn").onclick = () => copy(S.assistantRaw);
+  div.querySelector(".regen-btn").onclick = regenerate;
+  chatInner.appendChild(div);
+  S.assistantEl = div.querySelector(".assistantBody");
+  S.assistantEl.classList.add("typing");
+  S._thinkingSlot = div.querySelector(".thinkingSlot");
+  scrollToBottom();
+}
+function appendThinking(txt) {
+  if (!S.assistantEl) startAssistant();
+  if (!S.thinkingEl) {
+    S.thinkingEl = document.createElement("div");
+    S.thinkingEl.className = "thinking-block";
+    S._thinkingSlot.appendChild(S.thinkingEl);
+  }
+  S.thinkingRaw += txt;
+  S.thinkingEl.innerHTML =
+    `<div class="thinking-label">✻ thinking</div>
+     <div class="thinking-body">${escapeHtml(S.thinkingRaw)}</div>`;
+  const body = S.thinkingEl.querySelector(".thinking-body");
+  body.scrollTop = body.scrollHeight;
+  scrollToBottom();
+}
+function appendChunk(txt) {
+  if (!S.assistantEl) startAssistant();
+  S.assistantRaw += txt;
+  S.assistantEl.innerHTML = md(S.assistantRaw);
+  highlightIn(S.assistantEl);
+  scrollToBottom();
+}
+function finishAssistant() {
+  if (S.thinkingEl) S.thinkingEl.classList.add("done");
+  if (S.assistantEl) {
+    S.assistantEl.classList.remove("typing");
+    if (!S.assistantRaw.trim() && !S.thinkingRaw.trim()) {
+      S.assistantEl.parentElement.remove();
+    } else if (S.assistantRaw.trim()) {
+      S.assistantEl.querySelectorAll("pre code").forEach(c => { delete c.dataset.highlighted; });
+      highlightIn(S.assistantEl);
+    }
+  }
+  S.assistantEl = null;
+  S.thinkingEl = null;
+  S.thinkingRaw = "";
+  S._thinkingSlot = null;
+}
+function addToolCall(name, args, id) {
+  const block = document.createElement("div");
+  block.className = "tool-block fade-in";
+  const cid = id || (name + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7));
+  block.dataset.toolId = cid;
+  const argsStr = (() => { try { return JSON.stringify(args); } catch { return String(args); } })();
+  const argsShort = argsStr.length > 90 ? argsStr.slice(0, 87) + "…" : argsStr;
+  block.innerHTML = `
+    <div class="tool-header">
+      <svg class="tool-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+      <span class="tool-name">${escapeHtml(name)}</span>
+      <span class="tool-args">${escapeHtml(argsShort)}</span>
+      <span class="tool-status" style="color: var(--text-mute); font-size:11px;">running…</span>
+    </div>
+    <div class="tool-body">${escapeHtml(JSON.stringify(args, null, 2))}</div>`;
+  block.querySelector(".tool-header").onclick = () => block.classList.toggle("open");
+  chatInner.appendChild(block);
+  S.toolBlocks[cid] = block;
+  scrollToBottom();
+}
+function addToolResult(id, name, result) {
+  let b = id ? S.toolBlocks[id] : null;
+  if (!b) {
+    const keys = Object.keys(S.toolBlocks);
+    for (let i = keys.length - 1; i >= 0; i--) {
+      const cand = S.toolBlocks[keys[i]];
+      if (cand.querySelector(".tool-name").textContent === name &&
+          cand.querySelector(".tool-status").textContent === "running…") { b = cand; break; }
+    }
+  }
+  if (!b) return;
+  const body = b.querySelector(".tool-body");
+  body.textContent = body.textContent + "\n\n─── RESULT ───\n" + String(result);
+  const status = b.querySelector(".tool-status");
+  const isErr = /error|traceback|failed|rejected/i.test(String(result).slice(0, 200));
+  status.textContent = isErr ? "error" : "done";
+  status.style.color = isErr ? "var(--red)" : "var(--green)";
+  scrollToBottom();
+}
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); toast("Copied", "success"); }
+  catch { toast("Copy failed", "error"); }
+}
+
+/* FILE PICKER */
+function insertMarker(rel) {
+  const marker = `!- ${rel} -!`;
+  const cur = inputEl.value;
+  const sep = (!cur || cur.endsWith(" ") || cur.endsWith("\n")) ? "" : " ";
+  inputEl.value = cur + sep + marker + " ";
+  autoGrow();
+  inputEl.focus();
+  inputEl.selectionStart = inputEl.selectionEnd = inputEl.value.length;
+}
+$("attachBtn").onclick = async () => {
+  const paths = await nativePickFiles();
+  if (paths === null) { openFilePicker("attach"); return; }
+  if (!paths.length) return;
+  paths.forEach(p => insertMarker(toRelative(p)));
+  toast(`Attached ${paths.length} file${paths.length > 1 ? "s" : ""}`, "success");
+};
+function openFilePicker(mode = "attach") {
+  S.filePickerMode = mode;
+  $("filePickerTitle").textContent = mode === "pin" ? "Pin files" : "Attach files";
+  $("filePickerHint").innerHTML = mode === "pin"
+    ? `Click a file to pin it. Pinned files attach to <b>every</b> message.`
+    : `Click a file to attach. Inserts <code style="color:var(--accent);">!- path -!</code>`;
+  $("filePicker").classList.remove("hidden");
+  $("filePickerSearch").value = "";
+  loadFilePicker("");
+  setTimeout(() => $("filePickerSearch").focus(), 60);
+}
+function closeFilePicker() { $("filePicker").classList.add("hidden"); }
+
+let _fpTimer = null;
+$("filePickerClose").onclick = closeFilePicker;
+$("filePicker").addEventListener("click", (e) => {
+  if (e.target === $("filePicker")) closeFilePicker();
+});
+$("filePickerSearch").addEventListener("input", (e) => {
+  clearTimeout(_fpTimer);
+  _fpTimer = setTimeout(() => loadFilePicker(e.target.value.trim()), 120);
+});
+async function loadFilePicker(q) {
+  const list = $("filePickerList");
+  list.innerHTML = `<div class="px-3 py-6 text-center text-xs" style="color: var(--text-mute);">Loading…</div>`;
+  let files = [];
+  try {
+    files = await api.get(`/api/files/list?q=${encodeURIComponent(q)}&limit=400`);
+    if (!Array.isArray(files)) files = [];
+  } catch { files = []; }
+  $("filePickerCount").textContent = `${files.length} file(s)`;
+  if (!files.length) {
+    list.innerHTML = `<div class="px-3 py-8 text-center text-xs" style="color: var(--text-mute);">No matching files.</div>`;
+    return;
+  }
+  list.innerHTML = "";
+  const pinnedSet = new Set(S.pinnedFiles);
+  for (const f of files) {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "w-full flex items-center gap-3 px-3 py-2 text-left rounded hover:bg-[var(--bg-hover)]";
+    const isPinned = pinnedSet.has(f.path);
+    row.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="flex-shrink-0" style="color:var(--text-mute);">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <path d="M14 2v6h6"/>
+      </svg>
+      <span class="flex-1 truncate font-mono text-[12.5px]" style="color:${isPinned ? "var(--accent)" : "var(--text-dim)"};">${escapeHtml(f.path)}</span>
+      ${isPinned ? `<span class="chip on" style="font-size:9.5px;">pinned</span>` : ""}
+      <span class="text-[11px] flex-shrink-0" style="color:var(--text-mute);">${humanSize(f.size)}</span>
+    `;
+    row.onclick = async () => {
+      if (S.filePickerMode === "pin") {
+        if (S.pinnedFiles.includes(f.path)) { toast("Already pinned", "info"); return; }
+        if (S.pinnedFiles.length >= 10) { toast("Max 10 file pins", "error"); return; }
+        const r = await api.post("/api/pins/add", { path: f.path });
+        if (r.error) { toast(r.error, "error"); return; }
+        S.pinnedFiles = r.files || S.pinnedFiles.concat([f.path]);
+        renderPinFiles();
+        toast("Pinned: " + f.path, "success");
+        closeFilePicker();
+      } else {
+        insertMarker(f.path);
+        closeFilePicker();
+        toast("Attached: " + f.path, "success");
+      }
+    };
+    list.appendChild(row);
+  }
+}
+
+/* SESSIONS */
+async function loadSessions() {
+  S.sessions = await api.get("/api/sessions");
+  const box = $("sessionList");
+  box.innerHTML = "";
+  for (const s of S.sessions) {
+    const active = s.id === S.sid;
+    const el = document.createElement("div");
+    el.className = "group flex items-center gap-1 px-2 py-1.5 rounded-lg cursor-pointer text-[13px] transition " +
+      (active ? "bg-[var(--bg-active)]" : "hover:bg-[var(--bg-hover)]");
+    el.style.color = active ? "var(--text)" : "var(--text-dim)";
+    el.innerHTML = `
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="flex-shrink-0 opacity-60"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="truncate flex-1">${escapeHtml(s.title || "New chat")}</span>
+      <div class="hidden group-hover:flex gap-0.5">
+        <button class="icon-btn rename-btn" title="Rename" style="width:22px;height:22px;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+        </button>
+        <button class="icon-btn del-btn" title="Delete" style="width:22px;height:22px;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      </div>`;
+    el.onclick = (e) => {
+      if (e.target.closest(".rename-btn") || e.target.closest(".del-btn")) return;
+      switchSession(s.id);
+      if (isMobile()) closeSidebar();
+    };
+    el.querySelector(".rename-btn").onclick = async (e) => {
+      e.stopPropagation();
+      const t = prompt("Rename chat:", s.title || "");
+      if (!t) return;
+      await api.post(`/api/sessions/${s.id}/rename`, { title: t });
+      loadSessions();
+    };
+    el.querySelector(".del-btn").onclick = async (e) => {
+      e.stopPropagation();
+      if (!confirm("Delete this chat?")) return;
+      await api.del(`/api/sessions/${s.id}`);
+      if (S.sid === s.id) {
+        const list = await api.get("/api/sessions");
+        if (list.length) switchSession(list[0].id);
+        else { const c = await api.post("/api/sessions"); switchSession(c.id); }
+      }
+      loadSessions();
+    };
+    box.appendChild(el);
+  }
+}
+async function switchSession(sid) {
+  if (S.es) { S.es.close(); S.es = null; }
+  S.sid = sid;
+  chatInner.innerHTML = "";
+  S.toolBlocks = {};
+  S.assistantEl = null;
+  S.thinkingEl = null;
+  S.agentsBannerEl = null;
+  clearPlanOnNewTurn();
+  setBusy(false);
+
+  const meta = S.sessions.find(x => x.id === sid);
+  $("chatTitle").textContent = meta?.title || "New chat";
+
+  const msgs = await api.get(`/api/sessions/${sid}/messages`);
+  if (!msgs || !msgs.length) showWelcome();
+  else {
+    let lastUserIdx = -1;
+    for (let i = 0; i < msgs.length; i++) if (msgs[i].role === "user") lastUserIdx = i;
+    for (let i = 0; i < msgs.length; i++) {
+      const m = msgs[i];
+      if (m.role === "user") addUserMessage(m.content, { editable: i === lastUserIdx });
+      else if (m.role === "assistant" && m.content) {
+        startAssistant();
+        S.assistantRaw = m.content;
+        S.assistantEl.innerHTML = md(m.content);
+        finishAssistant();
+      }
+    }
+  }
+  attachStream();
+  loadSessions();
+  scrollToBottom(true);
+  chatInner.querySelectorAll("pre code").forEach(c => {
+    if (c.dataset.highlighted !== "yes") {
+      try { hljs.highlightElement(c); c.dataset.highlighted = "yes"; } catch (_) {}
+    }
+  });
+}
+function showWelcome() {
+  chatInner.innerHTML = `
+    <div class="welcome-card fade-in">
+      <div class="welcome-title">How can I help you today?</div>
+      <div class="welcome-sub">Ask a question, or try one of these:</div>
+      <div class="suggestions"></div>
+    </div>`;
+  const suggestions = [
+    "Explain this codebase's structure",
+    "Find and save the latest news about AI",
+    "Write a Python script that sorts files by extension",
+    "Search the web for React 19 release notes",
+  ];
+  const box = chatInner.querySelector(".suggestions");
+  suggestions.forEach(s => {
+    const b = document.createElement("button");
+    b.className = "suggestion";
+    b.textContent = s;
+    b.onclick = () => { inputEl.value = s; inputEl.focus(); autoGrow(); };
+    box.appendChild(b);
+  });
+}
+function attachStream() {
+  if (S.es) S.es.close();
+  S.es = new EventSource(`/api/stream/${S.sid}`);
+  S.es.onmessage = (e) => {
+    let ev; try { ev = JSON.parse(e.data); } catch { return; }
+    handleEvent(ev);
+  };
+}
+function handleEvent(ev) {
+  switch (ev.type) {
+    case "thinking":    appendThinking(ev.content); break;
+    case "chunk":       appendChunk(ev.content); break;
+    case "tool_call":
+      addToolCall(ev.name, ev.args, ev.id);
+      if (ev.step_index) markPlanStep(ev.step_index);
+      break;
+    case "tool_result": addToolResult(ev.id, ev.name, ev.result); break;
+    case "status": {
+      const label = ev.status === "idle" ? "" : ev.status;
+      $("statusText").textContent = label;
+      $("statusTextMobile").textContent = label;
+      break;
+    }
+    case "provider_active":
+      S.provider = ev.provider; S.model = ev.model;
+      $("sbProvider").textContent = ev.provider;
+      $("sbModel").textContent = ev.model;
+      $("modelLabel").textContent = ev.model;
+      updateThinkingButtonVisibility();
+      break;
+    case "title": loadSessions(); $("chatTitle").textContent = ev.title; break;
+    case "attachments_used": break;
+    case "agents_loaded": renderAgentsBanner(ev.files); break;
+    case "plan_generated":
+      if (Array.isArray(ev.steps) && ev.steps.length) renderPlan(ev.steps);
+      else toast(ev.note || "No plan needed", "info");
+      break;
+    case "plan_completed": completePlan(); break;
+    case "plan_aborted":   abortPlan();    break;
+    case "error":
+      finishAssistant();
+      setBrandDot("error");
+      setTimeout(() => setBrandDot(null), 2000);
+      toast(ev.message, "error");
+      break;
+    case "stopped": finishAssistant(); toast("Stopped", "info"); break;
+    case "done":
+      setBusy(false);
+      finishAssistant();
+      $("statusText").textContent = "";
+      $("statusTextMobile").textContent = "";
+      break;
+    case "confirm_request": showConfirm(ev); break;
+  }
+}
+function setBusy(busy) {
+  S.busy = busy;
+  setBrandDot(busy ? "busy" : "idle");
+  const btn = $("send");
+  if (busy) {
+    btn.classList.remove("send");
+    btn.classList.add("stop");
+    btn.title = "Stop";
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`;
+  } else {
+    btn.classList.remove("stop");
+    btn.classList.add("send");
+    btn.title = "Send";
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>`;
+  }
+}
+async function send() {
+  let text = inputEl.value.trim();
+  if (!text || S.busy) return;
+  if (S.pinnedFiles.length) {
+    const markers = S.pinnedFiles.map(p => `!- ${p} -!`).join(" ");
+    text = markers + "\n\n" + text;
+  }
+  setBusy(true);
+  inputEl.value = "";
+  autoGrow();
+  if (!chatInner.querySelector(".msg")) chatInner.innerHTML = "";
+  clearPlanOnNewTurn();
+  addUserMessage(text, { editable: true });
+  await api.post("/api/chat", { sid: S.sid, message: text });
+}
+async function stopGeneration() {
+  if (!S.busy) return;
+  try { await api.post("/api/stop", { sid: S.sid }); } catch {}
+}
+sendBtn.onclick = () => { if (S.busy) stopGeneration(); else send(); };
+inputEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    if (isMobile()) return;
+    e.preventDefault();
+    if (!S.busy) send();
+  }
+});
+function autoGrow() {
+  inputEl.style.height = "auto";
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 240) + "px";
+}
+inputEl.addEventListener("input", autoGrow);
+async function regenerate() {
+  if (S.busy) return;
+  clearPlanOnNewTurn();
+  setBusy(true);
+  const msgs = chatInner.querySelectorAll(".msg");
+  if (msgs.length) msgs[msgs.length - 1]?.remove();
+  await api.post("/api/regenerate", { sid: S.sid, message_index: -1 });
+}
+function showConfirm(ev) {
+  S.confirmReq = ev;
+  $("confirmName").textContent = ev.name;
+  $("confirmBar").classList.remove("hidden");
+}
+async function answerConfirm(yes) {
+  if (!S.confirmReq) return;
+  await api.post("/api/confirm", { sid: S.sid, id: S.confirmReq.id, answer: yes ? "y" : "n" });
+  S.confirmReq = null;
+  $("confirmBar").classList.add("hidden");
+}
+$("confirmYes").onclick = () => answerConfirm(true);
+$("confirmNo").onclick  = () => answerConfirm(false);
+$("newChat").onclick = async () => {
+  const c = await api.post("/api/sessions");
+  await loadSessions();
+  switchSession(c.id);
+  if (isMobile()) closeSidebar();
+};
+$("clearChat").onclick = async () => {
+  if (!confirm("Clear this chat?")) return;
+  await api.post("/api/clear", { sid: S.sid });
+  chatInner.innerHTML = "";
+  S.toolBlocks = {};
+  S.agentsBannerEl = null;
+  clearPlanOnNewTurn();
+  showWelcome();
+};
+
+/* MODEL PICKER */
+function openModelPicker(anchorEl) {
+  const menu = $("modelMenu");
+  if (!menu.classList.contains("hidden")) { menu.classList.add("hidden"); return; }
+  if (isMobile()) { menu.style.top = ""; menu.style.right = ""; menu.style.left = ""; menu.style.bottom = ""; }
+  else {
+    const rect = anchorEl.getBoundingClientRect();
+    menu.style.top   = (rect.bottom + 6) + "px";
+    menu.style.right = (window.innerWidth - rect.right) + "px";
+    menu.style.left  = "";
+    menu.style.bottom = "";
+  }
+  menu.classList.remove("hidden");
+  loadModels();
+}
+$("modelPicker").onclick       = (e) => { e.stopPropagation(); openModelPicker(e.currentTarget); };
+$("modelPickerMobile").onclick = (e) => { e.stopPropagation(); openModelPicker(e.currentTarget); };
+async function loadModels() {
+  const list = $("modelMenuList");
+  list.innerHTML = `<div class="px-3 py-4 text-center text-xs" style="color: var(--text-mute);">Loading…</div>`;
+  try {
+    const models = await api.get("/api/ollama/models");
+    S.models = Array.isArray(models) ? models : [];
+  } catch { S.models = []; }
+  list.innerHTML = "";
+  if (!S.models.length) {
+    list.innerHTML = `<div class="px-3 py-4 text-center text-xs" style="color: var(--text-mute);">No Ollama models found.<br>Start Ollama and pull a model.</div>`;
+    return;
+  }
+  for (const m of S.models) {
+    const row = document.createElement("button");
+    const active = m.name === S.model;
+    row.className = "w-full flex items-center gap-2 px-3 py-2.5 sm:py-2 text-left text-sm sm:text-xs rounded hover:bg-[var(--bg-hover)] transition";
+    row.style.color = active ? "var(--text)" : "var(--text-dim)";
+    row.innerHTML = `
+      ${m.thinking ? `
+        <span class="flex-shrink-0" title="Supports thinking mode" style="color: #fcd34d;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V18h6v-1.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/>
+          </svg>
+        </span>` : ""}
+      ${m.cloud ? `
+        <span class="flex-shrink-0" title="Cloud model" style="color: #7dd3fc;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+          </svg>
+        </span>` : ""}
+      <span class="truncate flex-1">${escapeHtml(m.name)}</span>
+      ${active ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>` : ""}`;
+    row.onclick = async () => {
+      $("modelMenu").classList.add("hidden");
+      await api.post("/api/providers/save", { name: "ollama", model: m.name });
+      S.model = m.name;
+      $("modelLabel").textContent = m.name;
+      $("sbModel").textContent = m.name;
+      toast("Switched to " + m.name, "success");
+      updateThinkingButtonVisibility();
+    };
+    list.appendChild(row);
+  }
+}
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#modelMenu") &&
+      !e.target.closest("#modelPicker") &&
+      !e.target.closest("#modelPickerMobile"))
+    $("modelMenu").classList.add("hidden");
+});
+
+/* TOGGLES */
+function updateThinkingButtonVisibility() {
+  const btn = $("thinkingToggle");
+  if (!btn) return;
+  const supported = modelIsThinking(S.model);
+  S.thinkingSupported = supported;
+  if (supported) btn.classList.remove("hidden");
+  else           btn.classList.add("hidden");
+  updateThinkingButton();
+}
+function updateThinkingButton() {
+  const btn = $("thinkingToggle");
+  if (!btn) return;
+  if (S.thinkingOn) {
+    btn.classList.add("active");
+    btn.classList.remove("warn-active");
+    btn.title = "Thinking: ON — click to disable";
+  } else {
+    btn.classList.remove("active", "warn-active");
+    btn.title = "Thinking: OFF — click to enable";
+  }
+}
+$("thinkingToggle").onclick = async () => {
+  if (!S.thinkingSupported) return;
+  S.thinkingOn = !S.thinkingOn;
+  updateThinkingButton();
+  try { await api.post("/api/settings", { thinking_mode: S.thinkingOn ? "on" : "off" }); } catch (_) {}
+  toast(S.thinkingOn ? "Thinking: on" : "Thinking: off", "success");
+};
+function updateVerifierButton() {
+  const btn = $("verifierToggle");
+  if (!btn) return;
+  if (S.verifierOn) {
+    btn.classList.add("active");
+    btn.classList.remove("warn-active");
+    btn.title = "Verifier: ON — click to disable";
+  } else {
+    btn.classList.remove("active");
+    btn.classList.add("warn-active");
+    btn.title = "Verifier: OFF — click to enable";
+  }
+}
+$("verifierToggle").onclick = async () => {
+  S.verifierOn = !S.verifierOn;
+  updateVerifierButton();
+  try { await api.post("/api/settings", { verification_enabled: S.verifierOn }); } catch (_) {}
+  toast(S.verifierOn ? "Verifier: on" : "Verifier: off", "success");
+};
+function updatePlanningButton() {
+  const btn = $("planningToggle");
+  if (!btn) return;
+  if (S.planningOn) {
+    btn.classList.add("active");
+    btn.classList.remove("warn-active");
+    btn.title = "Planning: ON — the agent writes a plan first";
+  } else {
+    btn.classList.remove("active", "warn-active");
+    btn.title = "Planning: OFF — the agent works directly";
+  }
+}
+$("planningToggle").onclick = async () => {
+  S.planningOn = !S.planningOn;
+  updatePlanningButton();
+  try { await api.post("/api/settings", { planning_enabled: S.planningOn }); } catch (_) {}
+  toast(S.planningOn ? "Planning: on" : "Planning: off", "success");
+};
+async function loadToggleStates() {
+  try {
+    const s = await api.get("/api/settings");
+    S.thinkingOn = (s.thinking_mode === "on");
+    S.verifierOn = (s.verification_enabled !== false);
+    S.planningOn = !!s.planning_enabled;
+  } catch (_) {}
+  updateThinkingButton();
+  updateVerifierButton();
+  updatePlanningButton();
+}
+
+/* SETTINGS */
+$("openSettings").onclick = () => {
+  $("settingsModal").classList.remove("hidden");
+  openTab("general");
+  if (isMobile()) closeSidebar();
+};
+$("closeSettings").onclick = () => $("settingsModal").classList.add("hidden");
+$("settingsModal").addEventListener("click", (e) => {
+  if (e.target === $("settingsModal")) $("settingsModal").classList.add("hidden");
+});
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.onclick = () => openTab(btn.dataset.tab);
+});
+function openTab(name) {
+  document.querySelectorAll(".tab-btn").forEach(b =>
+    b.classList.toggle("active", b.dataset.tab === name));
+  const titles = { general: "General", providers: "Providers", tools: "Tools",
+    mcp: "MCP servers", workspace: "Workspace", about: "About" };
+  $("settingsTitle").textContent = titles[name] || name;
+  $("settingsBody").innerHTML = "";
+  ({ general: renderGeneral, providers: renderProviders, tools: renderTools,
+     mcp: renderMcp, workspace: renderWorkspace, about: renderAbout })[name]?.();
+}
+
+async function renderGeneral() {
+  S.settings = await api.get("/api/settings");
+  const body = $("settingsBody");
+  const s = S.settings;
+  body.innerHTML = `
+    <div class="space-y-1">
+      <div class="row">
+        <div><div class="row-label">Mode</div><div class="row-hint">Which tools are exposed</div></div>
+        <select id="setMode" class="field" style="width: 160px;">
+          ${["Standard","Code","Minimal","Creator"].map(m =>
+            `<option ${m === S.mode ? "selected" : ""}>${m}</option>`).join("")}
+        </select>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Temperature</div><div class="row-hint">Lower = more deterministic</div></div>
+        <input id="setTemp" type="number" step="0.1" min="0" max="2" value="${s.temperature ?? 0.4}" class="field" style="width: 100px;">
+      </div>
+      <div class="row">
+        <div><div class="row-label">Max steps</div><div class="row-hint">Tool-call iterations per turn</div></div>
+        <input id="setSteps" type="number" min="1" max="50" value="${s.max_steps ?? 15}" class="field" style="width: 100px;">
+      </div>
+      <div class="row">
+        <div><div class="row-label">Keep alive</div><div class="row-hint">Ollama model hold time</div></div>
+        <input id="setKeep" type="text" value="${s.keep_alive ?? '30m'}" class="field" style="width: 100px;">
+      </div>
+      <div class="row">
+        <div><div class="row-label">History max</div><div class="row-hint">Tail size sent to model</div></div>
+        <input id="setHist" type="number" min="5" max="500" value="${s.history_max_messages ?? 40}" class="field" style="width: 100px;">
+      </div>
+      <div class="row">
+        <div><div class="row-label">AI chat titles</div><div class="row-hint">Auto-name new chats</div></div>
+        <button id="setTitles" class="switch ${s.ai_titles ? 'on' : ''}"></button>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Self-verification</div><div class="row-hint">Run a verifier pass before showing the answer</div></div>
+        <button id="setVerif" class="switch ${s.verification_enabled !== false ? 'on' : ''}"></button>
+      </div>
+      <div class="row">
+        <div><div class="row-label">Planning mode</div><div class="row-hint">Agent writes a plan, then executes steps in order</div></div>
+        <button id="setPlan" class="switch ${s.planning_enabled ? 'on' : ''}"></button>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch;">
+        <div>
+          <div class="row-label">System prompt override</div>
+          <div class="row-hint">Leave empty to use the mode default</div>
+        </div>
+        <textarea id="setSys" class="field mt-2" rows="6" placeholder="(using mode default)">${escapeHtml(s.system_prompt || "")}</textarea>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 mt-5 flex-col sm:flex-row">
+      <button id="resetGeneral" class="btn btn-secondary w-full sm:w-auto">Reset</button>
+      <button id="saveGeneral" class="btn btn-primary w-full sm:w-auto">Save</button>
+    </div>`;
+  $("setTitles").onclick = () => $("setTitles").classList.toggle("on");
+  $("setVerif").onclick  = () => $("setVerif").classList.toggle("on");
+  $("setPlan").onclick   = () => $("setPlan").classList.toggle("on");
+  $("saveGeneral").onclick = async () => {
+    const payload = {
+      temperature: parseFloat($("setTemp").value),
+      max_steps: parseInt($("setSteps").value),
+      keep_alive: $("setKeep").value,
+      history_max_messages: parseInt($("setHist").value),
+      ai_titles: $("setTitles").classList.contains("on"),
+      verification_enabled: $("setVerif").classList.contains("on"),
+      planning_enabled: $("setPlan").classList.contains("on"),
+      system_prompt: $("setSys").value,
+    };
+    await api.post("/api/settings", payload);
+    S.verifierOn = payload.verification_enabled;
+    S.planningOn = payload.planning_enabled;
+    updateVerifierButton();
+    updatePlanningButton();
+    const newMode = $("setMode").value;
+    if (newMode !== S.mode) {
+      await api.post("/api/mode", { sid: S.sid, mode: newMode });
+      S.mode = newMode;
+    }
+    toast("Settings saved", "success");
+  };
+  $("resetGeneral").onclick = () => {
+    $("setTemp").value = 0.4; $("setSteps").value = 15;
+    $("setKeep").value = "30m"; $("setHist").value = 40;
+    $("setTitles").classList.add("on");
+    $("setVerif").classList.add("on");
+    $("setPlan").classList.remove("on");
+    $("setSys").value = "";
+  };
+}
+
+async function renderProviders() {
+  const body = $("settingsBody");
+  body.innerHTML = `<div class="text-center py-8 text-xs" style="color: var(--text-mute);">Loading…</div>`;
+  S.providers = await api.get("/api/providers");
+  body.innerHTML = `<div class="space-y-3">${S.providers.map((p, i) => `
+    <div class="p-3 rounded-xl" style="background: var(--bg-side); border: 1px solid ${p.active ? 'var(--accent)' : 'var(--border-soft)'};">
+      <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+        <div class="font-medium text-sm truncate min-w-0 flex-1">${escapeHtml(p.label)}</div>
+        ${p.active ? `<span class="chip on flex-shrink-0" style="font-size:10px;">active</span>` : ""}
+        <button data-activate="${i}" class="btn btn-secondary flex-shrink-0 sm:ml-auto" style="padding:5px 12px; font-size:12px;" ${p.active ? "disabled" : ""}>
+          ${p.active ? "In use" : "Use"}
+        </button>
+      </div>
+      <div class="mt-3 space-y-2">
+        ${p.needs_key ? `
+        <div>
+          <label class="text-[11px] uppercase tracking-wider" style="color: var(--text-mute);">API key</label>
+          <input class="field mt-1 w-full" data-key="${i}" type="password"
+                 value="${p.api_key_set ? '••••••••••••••••' : ''}" placeholder="sk-…">
+        </div>` : ""}
+        ${p.needs_base ? `
+        <div>
+          <label class="text-[11px] uppercase tracking-wider" style="color: var(--text-mute);">Base URL</label>
+          <input class="field mt-1 w-full" data-base="${i}" value="${escapeHtml(p.base_url || '')}" placeholder="https://…">
+        </div>` : ""}
+        <div>
+          <label class="text-[11px] uppercase tracking-wider" style="color: var(--text-mute);">Model</label>
+          <input class="field mt-1 w-full" data-model="${i}" value="${escapeHtml(p.model || '')}" placeholder="${escapeHtml((p.default_models||[])[0] || '')}">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 mt-3 flex-wrap">
+        <button data-save="${i}" class="btn btn-primary flex-1 sm:flex-none" style="padding:5px 12px; font-size:12px;">Save</button>
+        ${!p.active ? `<button data-del="${i}" class="btn btn-danger flex-1 sm:flex-none" style="padding:5px 12px; font-size:12px;">Delete</button>` : ""}
+      </div>
+    </div>`).join("")}</div>`;
+  body.querySelectorAll("[data-activate]").forEach(b => b.onclick = async () => {
+    const p = S.providers[+b.dataset.activate];
+    await api.post("/api/providers/active", { name: p.name });
+    toast(`Switched to ${p.label}`, "success");
+    renderProviders();
+    updateThinkingButtonVisibility();
+  });
+  body.querySelectorAll("[data-save]").forEach(b => b.onclick = async () => {
+    const i = +b.dataset.save, p = S.providers[i];
+    const payload = { name: p.name };
+    const keyEl   = body.querySelector(`[data-key="${i}"]`);
+    const baseEl  = body.querySelector(`[data-base="${i}"]`);
+    const modelEl = body.querySelector(`[data-model="${i}"]`);
+    if (keyEl && keyEl.value && !keyEl.value.startsWith("•")) payload.api_key = keyEl.value;
+    if (baseEl) payload.base_url = baseEl.value;
+    if (modelEl) payload.model = modelEl.value;
+    await api.post("/api/providers/save", payload);
+    toast("Saved", "success");
+    renderProviders();
+  });
+  body.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+    const p = S.providers[+b.dataset.del];
+    if (!confirm(`Delete settings for ${p.label}?`)) return;
+    await api.del(`/api/providers/${p.name}`);
+    renderProviders();
+  });
+}
+
+async function renderTools() {
+  const body = $("settingsBody");
+  body.innerHTML = `<div class="text-center py-8 text-xs" style="color: var(--text-mute);">Loading…</div>`;
+  S.tools = await api.get(`/api/tools?sid=${S.sid}`);
+  const cats = {};
+  for (const t of S.tools) (cats[t.category] ||= []).push(t);
+  let html = `<div class="flex items-center gap-2 mb-4 flex-wrap">
+    <input id="toolSearch" class="field w-full sm:flex-1" style="min-width:0;" placeholder="Search tools…">
+    <div class="flex gap-2 w-full sm:w-auto">
+      <button id="allOn"  class="btn btn-secondary flex-1 sm:flex-none" style="padding:5px 12px; font-size:12px;">All on</button>
+      <button id="allOff" class="btn btn-secondary flex-1 sm:flex-none" style="padding:5px 12px; font-size:12px;">All off</button>
+    </div>
+  </div>`;
+  for (const [cat, tools] of Object.entries(cats)) {
+    html += `<div class="mb-5">
+      <div class="text-[11px] uppercase tracking-wider mb-2" style="color: var(--text-mute);">${escapeHtml(cat)} · ${tools.length}</div>
+      <div class="space-y-1">`;
+    for (const t of tools) {
+      html += `<div class="tool-row flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--bg-hover)]" data-name="${escapeHtml(t.name.toLowerCase())}">
+        <button class="switch ${t.enabled ? 'on' : ''}" data-toggle="${escapeHtml(t.name)}"></button>
+        <div class="flex-1 min-w-0">
+          <div class="text-[13px] font-mono truncate">${escapeHtml(t.name)}</div>
+          <div class="text-[11px] truncate" style="color: var(--text-mute);">${escapeHtml(t.description || '')}</div>
+        </div>
+        ${t.source === "mcp" ? `<span class="chip mcp flex-shrink-0" style="font-size:10px;">MCP</span>` : ""}
+        ${t.confirm ? `<span class="chip flex-shrink-0" style="font-size:10px;">confirm</span>` : ""}
+      </div>`;
+    }
+    html += `</div></div>`;
+  }
+  body.innerHTML = html;
+  body.querySelectorAll("[data-toggle]").forEach(btn => btn.onclick = async () => {
+    const name = btn.dataset.toggle;
+    const on = !btn.classList.contains("on");
+    btn.classList.toggle("on", on);
+    await api.post("/api/tools/toggle", { sid: S.sid, name, enabled: on });
+  });
+  $("toolSearch").oninput = (e) => {
+    const q = e.target.value.toLowerCase();
+    body.querySelectorAll(".tool-row").forEach(r =>
+      r.style.display = r.dataset.name.includes(q) ? "" : "none");
+  };
+  $("allOn").onclick  = async () => { await api.post("/api/tools/toggle_all", { sid: S.sid, enabled: true  }); renderTools(); };
+  $("allOff").onclick = async () => { await api.post("/api/tools/toggle_all", { sid: S.sid, enabled: false }); renderTools(); };
+}
+
+async function renderMcp() {
+  const body = $("settingsBody");
+  body.innerHTML = `<div class="text-center py-8 text-xs" style="color: var(--text-mute);">Loading…</div>`;
+  S.mcp = await api.get("/api/mcp/servers");
+  body.innerHTML = `
+    <div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+      <div class="text-xs" style="color: var(--text-dim);">${S.mcp.length} server(s) configured</div>
+      <div class="flex gap-2 w-full sm:w-auto">
+        <button id="mcpReload" class="btn btn-secondary flex-1 sm:flex-none" style="padding:5px 12px; font-size:12px;">Reload</button>
+        <button id="mcpAdd"    class="btn btn-primary flex-1 sm:flex-none"    style="padding:5px 12px; font-size:12px;">+ Add</button>
+      </div>
+    </div>
+    <div class="space-y-2">
+      ${S.mcp.length === 0 ? `<div class="p-6 text-center text-xs rounded-xl" style="background: var(--bg-side); color: var(--text-mute);">No MCP servers yet. Click Add to configure one.</div>` : ""}
+      ${S.mcp.map((s, i) => `
+        <div class="p-3 rounded-xl" style="background: var(--bg-side); border: 1px solid var(--border-soft);">
+          <div class="flex items-center gap-2 flex-wrap">
+            <div class="w-2 h-2 rounded-full flex-shrink-0" style="background: ${s.connected ? 'var(--green)' : (s.enabled ? 'var(--amber)' : 'var(--text-mute)')};"></div>
+            <div class="font-medium text-sm truncate min-w-0 flex-1">${escapeHtml(s.name)}</div>
+            <span class="chip flex-shrink-0" style="font-size:10px;">${s.tool_count} tools</span>
+            <button class="btn btn-danger flex-shrink-0 sm:ml-auto" data-del="${i}" style="padding:3px 10px; font-size:11px;">Delete</button>
+          </div>
+          <div class="mt-2 text-[11px] font-mono break-all" style="color: var(--text-mute);">
+            ${escapeHtml(s.command)} ${escapeHtml((s.args||[]).join(" "))}
+          </div>
+        </div>`).join("")}
+    </div>`;
+  $("mcpReload").onclick = async () => {
+    await api.post("/api/mcp/reload");
+    toast("MCP reloaded", "success");
+    renderMcp();
+  };
+  $("mcpAdd").onclick = () => mcpForm();
+  body.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+    const s = S.mcp[+b.dataset.del];
+    if (!confirm(`Delete MCP server "${s.name}"?`)) return;
+    await api.del(`/api/mcp/servers/${s.name}`);
+    renderMcp();
+  });
+}
+function mcpForm() {
+  const body = $("settingsBody");
+  body.innerHTML = `
+    <div class="space-y-3 max-w-xl w-full">
+      <div>
+        <label class="text-[11px] uppercase tracking-wider" style="color: var(--text-mute);">Name</label>
+        <input id="mcpName" class="field mt-1" placeholder="filesystem">
+      </div>
+      <div>
+        <label class="text-[11px] uppercase tracking-wider" style="color: var(--text-mute);">Command</label>
+        <input id="mcpCmd" class="field mt-1" placeholder="npx" value="cmd">
+      </div>
+      <div>
+        <label class="text-[11px] uppercase tracking-wider" style="color: var(--text-mute);">Arguments (one per line)</label>
+        <textarea id="mcpArgs" class="field mt-1" rows="5" placeholder="/c&#10;npx&#10;-y&#10;@modelcontextprotocol/server-filesystem&#10;D:/myproject"></textarea>
+      </div>
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+        <button id="mcpCancel" class="btn btn-secondary w-full sm:w-auto">Cancel</button>
+        <button id="mcpSave"   class="btn btn-primary w-full sm:w-auto">Save &amp; reload</button>
+      </div>
+    </div>`;
+  $("mcpCancel").onclick = () => renderMcp();
+  $("mcpSave").onclick = async () => {
+    const name = $("mcpName").value.trim();
+    const command = $("mcpCmd").value.trim();
+    const args = $("mcpArgs").value.split("\n").map(x => x.trim()).filter(Boolean);
+    if (!name || !command) return toast("Name and command are required", "error");
+    await api.post("/api/mcp/servers", { name, command, args, env: {}, enabled: true });
+    toast("MCP server added — reloading…", "success");
+    renderMcp();
+  };
+}
+
+async function renderWorkspace() {
+  const body = $("settingsBody");
+  const hasNative = hasNativeFolderPicker();
+  body.innerHTML = `
+    <div class="space-y-4">
+      <div>
+        <div class="row-label">Current workspace</div>
+        <div class="row-hint mt-1 font-mono text-xs break-all" id="wsCurrent" style="color: var(--accent);">${escapeHtml(S.workspace || "")}</div>
+      </div>
+      <div>
+        <label class="text-[11px] uppercase tracking-wider" style="color: var(--text-mute);">Change to</label>
+        <div class="ws-row mt-1">
+          <input id="wsPath" class="field" placeholder="D:/projects/my-app" value="${escapeHtml(S.workspace || "")}">
+          ${hasNative ? `
+            <button id="wsBrowse" class="btn btn-secondary flex-shrink-0" title="Pick a folder">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+              Browse…
+            </button>` : ""}
+        </div>
+      </div>
+      <div class="flex justify-end pt-2">
+        <button id="wsSave" class="btn btn-primary w-full sm:w-auto">Apply</button>
+      </div>
+    </div>`;
+  if (hasNative) {
+    $("wsBrowse").onclick = async () => {
+      const path = await nativePickFolder();
+      if (!path) return;
+      $("wsPath").value = path;
+      await applyWorkspace(path);
+      $("wsCurrent").textContent = S.workspace;
+      $("wsPath").value = S.workspace;
+    };
+  }
+  $("wsSave").onclick = async () => {
+    const p = $("wsPath").value.trim();
+    if (!p) return;
+    await applyWorkspace(p);
+    $("wsCurrent").textContent = S.workspace;
+    $("wsPath").value = S.workspace;
+  };
+}
+
+function renderAbout() {
+  $("settingsBody").innerHTML = `
+    <div class="space-y-4 text-[13px]" style="color: var(--text-dim);">
+      <div>
+        <div class="font-semibold mb-1" style="color: var(--text);">Astronaut AI</div>
+        <div>Local-first agentic coding assistant. Runs against Ollama by default, or any OpenAI-compatible endpoint.</div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+        <div><div class="uppercase tracking-wider mb-1" style="color: var(--text-mute);">Provider</div>
+          <div class="font-mono break-all" id="abProvider">—</div></div>
+        <div><div class="uppercase tracking-wider mb-1" style="color: var(--text-mute);">Model</div>
+          <div class="font-mono break-all" id="abModel">—</div></div>
+        <div><div class="uppercase tracking-wider mb-1" style="color: var(--text-mute);">Mode</div>
+          <div class="font-mono break-all" id="abMode">—</div></div>
+        <div><div class="uppercase tracking-wider mb-1" style="color: var(--text-mute);">Workspace</div>
+          <div class="font-mono break-all" id="abWs">—</div></div>
+      </div>
+    </div>`;
+  $("abProvider").textContent = S.provider || "—";
+  $("abModel").textContent = S.model || "—";
+  $("abMode").textContent = S.mode || "—";
+  $("abWs").textContent = S.workspace || "—";
+}
+
+/* ════════════════════════════════════════════════════════════
+   REPOMAP
+   ════════════════════════════════════════════════════════════ */
+
+const RM_CAT_COLOR = {
+  py: "#a480ff", js: "#67e8f9", ui: "#fbbf24",
+  test: "#4ade80", config: "#f87171",
+  docs: "#8d93aa", migration: "#c084fc",
+  other: "#8d93aa",
+};
+
+function openRepomap() {
+  $("repomapOverlay").classList.remove("hidden");
+  $("repomapPanel").classList.remove("hidden");
+  if (S._rmRaw) {
+    $("repomapMeta").textContent =
+      `${S._rmRaw.count} files · ${S._rmRaw.workspace || S.workspace || ""}`;
+  } else {
+    loadRepomap();
+  }
+}
+function closeRepomap() {
+  $("repomapOverlay").classList.add("hidden");
+  $("repomapPanel").classList.add("hidden");
+  $("rmTooltip").style.display = "none";
+  if (S._rmSim) { try { S._rmSim.stop(); } catch (_) {} S._rmSim = null; }
+}
+$("openRepomap").onclick    = openRepomap;
+$("rmClose").onclick        = closeRepomap;
+$("repomapOverlay").onclick = closeRepomap;
+
+document.querySelectorAll(".repomap-sidebar .tab").forEach(tab => {
+  tab.onclick = () => {
+    S._rmView = tab.dataset.view;
+    document.querySelectorAll(".repomap-sidebar .tab")
+      .forEach(t => t.classList.toggle("active", t === tab));
+    $("rmGraphView").classList.toggle("hidden", S._rmView !== "graph");
+    $("rmTreeView").classList.toggle("hidden", S._rmView !== "tree");
+    if (S._rmView === "graph" && S._rmGraph) renderRmGraph(S._rmGraph);
+    if (S._rmView === "tree"  && S._rmTree ) renderRmTree(S._rmTree);
+  };
+});
+
+$("rmRefresh").onclick = async () => {
+  $("rmRefresh").disabled = true;
+  $("repomapMeta").textContent = "rebuilding…";
+  try {
+    const r = await api.post("/api/repomap/regen", {});
+    if (r.error) { toast(r.error, "error"); return; }
+    await loadRepomap(true);
+    toast("Repo map rebuilt", "success");
+  } finally {
+    $("rmRefresh").disabled = false;
+  }
+};
+
+$("rmSummaries").onclick = async () => {
+  if (!confirm("Generate one-line summaries for every file? This is slow (one LLM call per file) and results are cached by mtime.")) return;
+  const btn = $("rmSummaries");
+  btn.disabled = true;
+  const oldLabel = btn.textContent;
+  btn.textContent = "Working…";
+  $("repomapMeta").textContent = "summarizing…";
+  try {
+    const r = await api.post("/api/repomap/summaries", { max_files: 60 });
+    if (r.error) { toast(r.error, "error"); return; }
+    toast(`Summarized ${r.summarized}/${r.total}`, "success");
+    await loadRepomap(false);
+  } catch (e) {
+    toast("Summaries failed: " + e, "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = oldLabel;
+  }
+};
+
+let _rmSearchTimer = null;
+$("rmSearch").addEventListener("input", (e) => {
+  clearTimeout(_rmSearchTimer);
+  _rmSearchTimer = setTimeout(() => {
+    if (S._rmRaw) renderRmSidebar(S._rmRaw, e.target.value.trim().toLowerCase());
+  }, 100);
+});
+
+async function loadRepomap(force = false) {
+  const meta = $("repomapMeta");
+  meta.textContent = "loading…";
+  $("rmList").innerHTML = `<div class="rm-list-empty">Loading…</div>`;
+
+  const q = force ? "?refresh=1" : "";
+  const qJoin = force ? "&" : "?";
+
+  try {
+    const [raw, graph, tree] = await Promise.all([
+      api.get(`/api/repomap${q}`),
+      api.get(`/api/repomap${q}${qJoin}graph=1`),
+      api.get(`/api/repomap${q}${qJoin}tree=1`),
+    ]);
+    if (raw.error || graph.error || tree.error) {
+      const msg = raw.error || graph.error || tree.error;
+      meta.textContent = "error";
+      $("rmList").innerHTML = `<div class="rm-list-empty">${escapeHtml(msg)}</div>`;
+      toast(msg, "error");
+      return;
+    }
+    S._rmRaw = raw;
+    S._rmGraph = graph;
+    S._rmTree = tree;
+    meta.textContent = `${raw.count} files · ${raw.workspace || S.workspace || ""}`;
+    renderRmSidebar(raw, ($("rmSearch").value || "").toLowerCase());
+    if (S._rmView === "graph") renderRmGraph(graph);
+    else renderRmTree(tree);
+  } catch (e) {
+    meta.textContent = "error";
+    $("rmList").innerHTML = `<div class="rm-list-empty">Load failed</div>`;
+    toast("Repomap load failed: " + e, "error");
+  }
+}
+
+/* ── sidebar file list ──────────────────────────── */
+function renderRmSidebar(raw, query = "") {
+  const box = $("rmList");
+  box.innerHTML = "";
+  const files = (raw.files || []);
+  const filtered = query
+    ? files.filter(f => f.path.toLowerCase().includes(query))
+    : files;
+
+  if (!filtered.length) {
+    box.innerHTML = `<div class="rm-list-empty">${files.length ? "No matches" : "Workspace is empty"}</div>`;
+    return;
+  }
+  const shown = filtered.slice(0, 300);
+  for (const f of shown) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "rm-list-item";
+    b.textContent = f.path;
+    b.title = f.path;
+    b.dataset.path = f.path;
+    b.onclick = () => selectRmFile(f.path);
+    box.appendChild(b);
+  }
+  if (filtered.length > shown.length) {
+    const more = document.createElement("div");
+    more.className = "rm-list-empty";
+    more.textContent = `+${filtered.length - shown.length} more`;
+    box.appendChild(more);
+  }
+}
+
+/* ── tree view ────────────────────────────────────── */
+function renderRmTree(tree) {
+  const root = $("rmTreeView");
+  root.innerHTML = "";
+  if (!tree) return;
+  root.appendChild(buildDir(tree, 0, true));
+
+  function buildDir(node, depth, autoOpen = false) {
+    const wrap = document.createElement("div");
+    const head = document.createElement("div");
+    head.className = "rm-dir" + (autoOpen ? " open" : "");
+    const fileCount = (node.files || []).length;
+    const dirCount  = (node.dirs  || []).length;
+    head.innerHTML = `
+      <span class="chev">▶</span>
+      <span class="name">${escapeHtml(node.name || "workspace")}</span>
+      <span class="count">${fileCount + dirCount}</span>`;
+
+    const kids = document.createElement("div");
+    kids.className = "rm-dir-children" + (autoOpen ? " open" : "");
+    for (const d of (node.dirs || [])) kids.appendChild(buildDir(d, depth + 1, false));
+    for (const f of (node.files || [])) kids.appendChild(buildFile(f));
+
+    head.onclick = () => {
+      head.classList.toggle("open");
+      kids.classList.toggle("open", head.classList.contains("open"));
+    };
+    wrap.appendChild(head);
+    wrap.appendChild(kids);
+    return wrap;
+  }
+  function buildFile(f) {
+    const el = document.createElement("div");
+    el.className = "rm-file";
+    el.dataset.path = f.path;
+    el.title = f.path;
+    el.innerHTML = `
+      <span class="name">${escapeHtml(f.name)}</span>
+      <span class="badges">
+        <span class="b in">${f.imports_count ?? 0}↓</span>
+        <span class="b out">${f.imported_by_count ?? 0}↑</span>
+      </span>`;
+    el.onclick = (e) => { e.stopPropagation(); selectRmFile(f.path); };
+    return el;
+  }
+}
+
+/* ── graph view ────────────────────────────────────── */
+function renderRmGraph(g) {
+  const svg = d3.select($("rmSvg"));
+  svg.selectAll("*").remove();
+  if (S._rmSim) { try { S._rmSim.stop(); } catch (_) {} S._rmSim = null; }
+  S._rmFitted = false;
+
+  const wrap = $("rmGraphView");
+  const w = wrap.clientWidth || 800;
+  const h = wrap.clientHeight || 500;
+
+  if (!g || !g.nodes || !g.nodes.length) {
+    svg.append("text")
+      .attr("x", w / 2).attr("y", h / 2)
+      .attr("text-anchor", "middle")
+      .attr("fill", "var(--text-mute)")
+      .attr("font-size", "12")
+      .text("No files indexed yet");
+    return;
+  }
+
+  const defs = svg.append("defs");
+  defs.append("marker")
+    .attr("id", "rm-arrow")
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 20).attr("refY", 0)
+    .attr("markerWidth", 5).attr("markerHeight", 5)
+    .attr("orient", "auto")
+    .append("path")
+    .attr("d", "M0,-5L10,0L0,5")
+    .attr("fill", "var(--border)");
+
+  const root = svg.append("g").attr("class", "rm-zoom-root");
+
+  const zoom = d3.zoom()
+    .scaleExtent([0.1, 6])
+    .on("zoom", (ev) => root.attr("transform", ev.transform));
+  svg.call(zoom);
+  svg.on("dblclick.zoom", null);
+
+  const nodes = g.nodes.map(n => Object.assign({}, n));
+  const links = (g.edges || []).map(e => ({ source: e.from, target: e.to }));
+
+  const sim = d3.forceSimulation(nodes)
+    .force("link",    d3.forceLink(links).id(d => d.id).distance(70).strength(0.5))
+    .force("charge",  d3.forceManyBody().strength(-160))
+    .force("center",  d3.forceCenter(0, 0))
+    .force("collide", d3.forceCollide().radius(d => 8 + (d.weight || 1) * 3));
+  S._rmSim = sim;
+
+  const linkSel = root.append("g")
+    .selectAll("line").data(links).join("line")
+    .attr("class", "rm-link")
+    .attr("marker-end", "url(#rm-arrow)");
+
+  const nodeSel = root.append("g")
+    .selectAll("g").data(nodes).join("g")
+    .attr("class", "rm-node")
+    .call(d3.drag()
+      .on("start", (ev, d) => {
+        ev.sourceEvent.stopPropagation();
+        if (!ev.active) sim.alphaTarget(0.3).restart();
+        d.fx = d.x; d.fy = d.y;
+      })
+      .on("drag",  (ev, d) => { d.fx = ev.x; d.fy = ev.y; })
+      .on("end",   (ev) => {
+        if (!ev.active) sim.alphaTarget(0);
+      }));
+
+  nodeSel.append("circle")
+    .attr("r", d => Math.min(22, 4 + (d.weight || 1) * 2))
+    .attr("fill", d => RM_CAT_COLOR[d.category] || RM_CAT_COLOR.other)
+    .attr("stroke", "rgba(0,0,0,0.55)");
+
+  nodeSel.append("text")
+    .attr("dy", d => Math.min(22, 4 + (d.weight || 1) * 2) + 10)
+    .text(d => d.label);
+
+  nodeSel
+    .on("click",      (ev, d) => { ev.stopPropagation(); selectRmFile(d.full); })
+    .on("dblclick",   (ev, d) => {
+      ev.stopPropagation();
+      d.fx = null; d.fy = null;
+      sim.alphaTarget(0.3).restart();
+      setTimeout(() => sim.alphaTarget(0), 400);
+    })
+    .on("mouseenter", (ev, d) => showRmTooltip(ev, d))
+    .on("mousemove",  (ev)    => positionRmTooltip(ev))
+    .on("mouseleave", ()      => hideRmTooltip());
+
+  let _tickCount = 0;
+  sim.on("tick", () => {
+    linkSel
+      .attr("x1", d => d.source.x).attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+    nodeSel.attr("transform", d => `translate(${d.x},${d.y})`);
+
+    _tickCount++;
+    if (!S._rmFitted && _tickCount >= 25) {
+      S._rmFitted = true;
+      fitGraph();
+    }
+  });
+
+  function fitGraph() {
+    const xs = nodes.map(n => n.x).filter(Number.isFinite);
+    const ys = nodes.map(n => n.y).filter(Number.isFinite);
+    if (!xs.length) return;
+    const pad = 60;
+    const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad;
+    const minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
+    const bw = Math.max(1, maxX - minX);
+    const bh = Math.max(1, maxY - minY);
+    const scale = Math.min(w / bw, h / bh, 2);
+    const tx = w / 2 - ((minX + maxX) / 2) * scale;
+    const ty = h / 2 - ((minY + maxY) / 2) * scale;
+    svg.transition().duration(400).call(
+      zoom.transform,
+      d3.zoomIdentity.translate(tx, ty).scale(scale)
+    );
+  }
+
+  const fitBtn = $("rmFit");
+  if (fitBtn) fitBtn.onclick = () => fitGraph();
+  zoom.on("start", () => { S._rmFitted = true; });
+}
+
+function showRmTooltip(evt, d) {
+  const tip = $("rmTooltip");
+  tip.innerHTML = `
+    <div class="p">${escapeHtml(d.full)}</div>
+    <div>${d.imports_count} imports · ${d.imported_by_count} imported by · ${d.symbol_count} symbols</div>
+    ${d.summary ? `<div class="s">${escapeHtml(d.summary)}</div>` : ""}`;
+  tip.style.display = "block";
+  positionRmTooltip(evt);
+}
+function positionRmTooltip(evt) {
+  const tip = $("rmTooltip");
+  if (tip.style.display !== "block") return;
+  const wrap = $("rmGraphView").getBoundingClientRect();
+  const tipW = tip.offsetWidth || 260;
+  const tipH = tip.offsetHeight || 80;
+  const x = evt.clientX - wrap.left + 14;
+  const y = evt.clientY - wrap.top  + 14;
+  tip.style.left = Math.max(6, Math.min(x, wrap.width  - tipW - 6)) + "px";
+  tip.style.top  = Math.max(6, Math.min(y, wrap.height - tipH - 6)) + "px";
+}
+function hideRmTooltip() { $("rmTooltip").style.display = "none"; }
+
+/* ── traits / raw viewer ──────────────────────────── */
+function setViewerMode(mode) {
+  S._rmViewerMode = mode;
+  document.querySelectorAll("#rmViewToggle button").forEach(b =>
+    b.classList.toggle("active", b.dataset.mode === mode));
+  if (S._rmSelected) renderViewer(S._rmSelected);
+}
+document.querySelectorAll("#rmViewToggle button").forEach(b => {
+  b.onclick = () => setViewerMode(b.dataset.mode);
+});
+
+async function selectRmFile(relPath) {
+  if (!relPath) return;
+  S._rmSelected = relPath;
+
+  document.querySelectorAll(".rm-list-item.selected, .rm-file.selected")
+    .forEach(el => el.classList.remove("selected"));
+  const listRow = document.querySelector(`.rm-list-item[data-path="${CSS.escape(relPath)}"]`);
+  if (listRow) listRow.classList.add("selected");
+  const treeRow = document.querySelector(`.rm-file[data-path="${CSS.escape(relPath)}"]`);
+  if (treeRow) treeRow.classList.add("selected");
+
+  $("rmPreviewPath").textContent = relPath;
+  $("rmPreviewPath").title = relPath;
+  $("rmViewToggle").style.display = "";
+
+  await renderViewer(relPath);
+}
+
+async function renderViewer(relPath) {
+  const viewer = $("rmViewer");
+  const infoEl = $("rmPreviewInfo");
+  infoEl.textContent = "";
+
+  if (S._rmViewerMode === "raw") {
+    viewer.innerHTML = `<div class="rm-preview-empty">Loading…</div>`;
+    try {
+      const r = await api.get(`/api/repomap/file?path=${encodeURIComponent(relPath)}`);
+      if (r.error) {
+        viewer.innerHTML = `<div class="rm-preview-empty">${escapeHtml(r.error)}</div>`;
+        if (r.size) infoEl.textContent = humanSize(r.size);
+        return;
+      }
+      infoEl.textContent = humanSize(r.size);
+      viewer.innerHTML = `<pre class="rm-code"><code></code></pre>`;
+      const code = viewer.querySelector("code");
+      code.textContent = r.content;
+      const ext = (relPath.split(".").pop() || "").toLowerCase();
+      const langMap = {
+        py: "python", pyi: "python",
+        js: "javascript", jsx: "javascript", mjs: "javascript", cjs: "javascript",
+        ts: "typescript", tsx: "typescript",
+        rs: "rust", go: "go", rb: "ruby", php: "php",
+        java: "java", kt: "kotlin", swift: "swift", cs: "csharp",
+        c: "c", h: "c", cpp: "cpp", cc: "cpp", hpp: "cpp",
+        sh: "bash", bash: "bash", zsh: "bash",
+        yml: "yaml", yaml: "yaml", toml: "ini", ini: "ini", cfg: "ini",
+        html: "html", htm: "html", css: "css", scss: "scss", sass: "scss",
+        vue: "xml", svelte: "xml", xml: "xml",
+        sql: "sql", graphql: "graphql", gql: "graphql", proto: "protobuf",
+        md: "markdown", mdx: "markdown", json: "json",
+      };
+      const lang = langMap[ext] || "plaintext";
+      code.className = `language-${lang}`;
+      try { hljs.highlightElement(code); } catch (_) {}
+    } catch (e) {
+      viewer.innerHTML = `<div class="rm-preview-empty">Load failed: ${escapeHtml(String(e))}</div>`;
+    }
+    return;
+  }
+
+  /* traits view */
+  const file = (S._rmRaw?.files || []).find(f => f.path === relPath);
+  if (!file) {
+    viewer.innerHTML = `
+      <div class="rm-traits">
+        <div class="rm-empty-note">
+          <b>Not in the parsed set.</b> This path isn't in the current repomap —
+          try <b>Refresh</b> to rebuild it.
+        </div>
+      </div>`;
+    return;
+  }
+  infoEl.textContent = humanSize(file.size);
+
+  const symbols = file.symbols || [];
+  const imports = file.imports || [];
+  const importedBy = file.imported_by || [];
+  const calls = file.calls || [];
+  const rawImports = file.raw_imports || [];
+  const ext = (relPath.split(".").pop() || "").toLowerCase();
+
+  // Category badge label
+  const cat = rmCategoryOf(relPath);
+
+  // Dedupe calls & keep only the top 40
+  const callsSet = Array.from(new Set(calls));
+  const callsShown = callsSet.slice(0, 40);
+  const callsExtra = callsSet.length - callsShown.length;
+
+  // External imports = raw minus any that resolved to internal paths
+  const internalSet = new Set(imports);
+  const externals = Array.from(new Set(rawImports))
+    .filter(m => !internalSet.has(m))
+    .slice(0, 30);
+
+  const symHtml = symbols.length
+    ? symbols.map(s => {
+        const k = symbolKindClass(s);
+        return `<div class="rm-sym ${k}">
+          <span class="kind">${escapeHtml(s.kind || "def")}</span>
+          <span class="sig" title="${escapeHtml(s.sig || s.name)}">${escapeHtml(s.sig || s.name)}</span>
+        </div>`;
+      }).join("")
+    : `<div class="rm-empty-note">
+         No symbols extracted. The parser only walks top-level defs / classes
+         for Python (<code>.py</code>/<code>.pyi</code>); other languages use a
+         regex fallback that matches a narrow set of declarations.
+         ${symbolsReason(ext)}
+       </div>`;
+
+  const importsHtml = imports.length
+    ? imports.map(p => `
+        <button class="rm-link-row" data-jump="${escapeHtml(p)}">
+          <span class="arrow">→</span>
+          <span class="p" title="${escapeHtml(p)}">${escapeHtml(p)}</span>
+        </button>`).join("")
+    : `<div class="rm-empty-note">
+         No <b>resolved internal imports</b>. Either the file imports nothing
+         from the repo, or the imported module names don't match a file in
+         the current map.
+       </div>`;
+
+  const importedByHtml = importedBy.length
+    ? importedBy.map(p => `
+        <button class="rm-link-row" data-jump="${escapeHtml(p)}">
+          <span class="arrow">←</span>
+          <span class="p" title="${escapeHtml(p)}">${escapeHtml(p)}</span>
+        </button>`).join("")
+    : `<div class="rm-empty-note">
+         Nothing in the map imports this file.
+       </div>`;
+
+  const externalsHtml = externals.length
+    ? `<div class="rm-section">
+         <div class="rm-section-title">
+           External imports
+           <span class="count">${externals.length}</span>
+         </div>
+         <div class="rm-chips">
+           ${externals.map(m => `<span class="rm-chip">${escapeHtml(m)}</span>`).join("")}
+         </div>
+       </div>`
+    : "";
+
+  const callsHtml = callsShown.length
+    ? `<div class="rm-section">
+         <div class="rm-section-title">
+           Calls (heuristic)
+           <span class="count">${callsSet.length} unique</span>
+         </div>
+         <div class="rm-chips">
+           ${callsShown.map(c => `<span class="rm-chip">${escapeHtml(c)}</span>`).join("")}
+           ${callsExtra > 0 ? `<span class="rm-chip more">+${callsExtra} more</span>` : ""}
+         </div>
+       </div>`
+    : "";
+
+  const summaryHtml = file.summary
+    ? `<div class="rm-section">
+         <div class="rm-section-title">Summary</div>
+         <div class="rm-empty-note" style="background: rgba(164,128,255,0.05); border-color: rgba(164,128,255,0.2);">
+           ${escapeHtml(file.summary)}
+         </div>
+       </div>`
+    : "";
+
+  viewer.innerHTML = `
+    <div class="rm-traits">
+      <div class="rm-traits-head">
+        <div class="ttl">${escapeHtml(relPath)}</div>
+        <div class="stats">
+          <span class="rm-stat">${humanSize(file.size)}</span>
+          <span class="rm-stat accent">${cat}</span>
+          <span class="rm-stat green">rank ${(file.rank ?? 0).toFixed(4)}</span>
+          <span class="rm-stat">${symbols.length} symbols</span>
+          <span class="rm-stat">${imports.length} →</span>
+          <span class="rm-stat">${importedBy.length} ←</span>
+          ${callsSet.length ? `<span class="rm-stat muted">${callsSet.length} calls</span>` : ""}
+        </div>
+      </div>
+
+      ${summaryHtml}
+
+      <div class="rm-section">
+        <div class="rm-section-title">
+          Symbols
+          <span class="count">${symbols.length}</span>
+        </div>
+        <div class="rm-rows">${symHtml}</div>
+      </div>
+
+      <div class="rm-section">
+        <div class="rm-section-title">
+          Imports (resolved)
+          <span class="count">${imports.length}</span>
+        </div>
+        <div class="rm-rows">${importsHtml}</div>
+      </div>
+
+      <div class="rm-section">
+        <div class="rm-section-title">
+          Imported by
+          <span class="count">${importedBy.length}</span>
+        </div>
+        <div class="rm-rows">${importedByHtml}</div>
+      </div>
+
+      ${externalsHtml}
+      ${callsHtml}
+    </div>`;
+
+  // Wire up navigation links inside the traits view.
+  viewer.querySelectorAll("[data-jump]").forEach(btn => {
+    btn.onclick = () => selectRmFile(btn.dataset.jump);
+  });
+}
+
+function rmCategoryOf(path) {
+  const p = path.toLowerCase();
+  if (p.includes("/tests/") || p.startsWith("tests/") || p.endsWith("_test.py")) return "test";
+  if (p.includes("/migrations/") || p.includes("/alembic/")) return "migration";
+  if (p.endsWith(".md") || p.endsWith(".rst") || p.endsWith(".txt")) return "docs";
+  if (/\.(json|yaml|yml|toml|ini|cfg)$/.test(p)) return "config";
+  if (/\.(html|htm|css|scss|sass|less|vue|svelte)$/.test(p)) return "ui";
+  if (/\.(js|jsx|ts|tsx|mjs|cjs)$/.test(p)) return "js";
+  if (/\.(py|pyi)$/.test(p)) return "py";
+  return "other";
+}
+
+function symbolKindClass(s) {
+  const k = (s.kind || "").toLowerCase();
+  if (k === "class") return "k-class";
+  if (k === "method") return "k-method";
+  if (k === "func") {
+    const sig = (s.sig || "").trim().toLowerCase();
+    if (sig.startsWith("async")) return "k-async";
+    return "k-func";
+  }
+  return "k-def";
+}
+
+function symbolsReason(ext) {
+  if (ext === "py" || ext === "pyi") return "";
+  if (ext === "md" || ext === "txt" || ext === "rst")
+    return "Plain text / docs have no declarations by design.";
+  if (/^(json|yaml|yml|toml|ini|cfg|xml)$/.test(ext))
+    return "Config and data files are indexed but not parsed for symbols.";
+  return "";
+}
+
+/* VIEWPORT */
+let _lastIsMobile = isMobile();
+window.addEventListener("resize", () => {
+  const now = isMobile();
+  if (now !== _lastIsMobile) {
+    _lastIsMobile = now;
+    if (!now) closeSidebar();
+  }
+  // Do NOT re-render the graph on resize; it would reset zoom.
+});
+
+/* SHUTDOWN */
+function shutdownBackend() {
+  try {
+    const blob = new Blob([JSON.stringify({})], { type: "application/json" });
+    navigator.sendBeacon("/api/shutdown", blob);
+  } catch (_) {}
+}
+if (window.pywebview) window.addEventListener("beforeunload", shutdownBackend);
+else                  window.addEventListener("pagehide", shutdownBackend);
+
+/* BOOT */
+(async function boot() {
+  try {
+    const info = {
+      provider:  {{ provider | tojson }},
+      model:     {{ model | tojson }},
+      mode:      {{ mode | tojson }},
+      workspace: {{ workspace | tojson }},
+      sid:       {{ current_sid | tojson }},
+    };
+    S.provider  = info.provider;
+    S.model     = info.model;
+    S.mode      = info.mode;
+    S.workspace = info.workspace;
+    S.sid       = info.sid;
+
+    $("sbProvider").textContent = info.provider;
+    $("sbModel").textContent    = info.model;
+    $("modelLabel").textContent = info.model;
+    renderWsPath();
+  } catch (e) { console.error("Boot info missing:", e); }
+
+  await loadToggleStates();
+  updateThinkingButtonVisibility();
+  updatePlanningButton();
+  setBrandDot("idle");
+
+  await loadPins();
+  await refreshGit();
+
+  await loadSessions();
+  if (S.sid) await switchSession(S.sid);
+  else if (S.sessions.length) await switchSession(S.sessions[0].id);
+  else {
+    const c = await api.post("/api/sessions");
+    await loadSessions();
+    await switchSession(c.id);
+  }
+})();
+</script>
+</body>
+</html>
