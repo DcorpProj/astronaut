@@ -2188,6 +2188,8 @@ class AstroCLI:
     def _get_think_param(self, model: str):
         rt = settings_store.load()
         mode = rt.get("thinking_mode", "auto")
+        if not model_supports_thinking(model):
+            return None
         if mode == "on":
             return True
         if mode == "off":
@@ -2470,7 +2472,7 @@ class AstroCLI:
         CONFIG["model"] = arg
         save_provider(get_active(), model=arg)
         try:
-            from _shared import invalidate_context_cache
+            from astronaut._shared import invalidate_context_cache
             invalidate_context_cache()
         except Exception:
             pass
@@ -2512,7 +2514,7 @@ class AstroCLI:
         except Exception:
             pass
         try:
-            from _shared import invalidate_context_cache
+            from astronaut._shared import invalidate_context_cache
             invalidate_context_cache()
         except Exception:
             pass

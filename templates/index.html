@@ -2235,10 +2235,18 @@ document.addEventListener("click", (e) => {
 });
 
 /* TOGGLES */
-function updateThinkingButtonVisibility() {
+async function updateThinkingButtonVisibility() {
   const btn = $("thinkingToggle");
   if (!btn) return;
-  const supported = modelIsThinking(S.model);
+
+  let supported = false;
+  try {
+    const r = await api.get(`/api/model/capabilities?model=${encodeURIComponent(S.model || "")}`);
+    supported = !!r.thinking;
+  } catch (_) {
+    supported = modelIsThinking(S.model);   // fallback heuristic
+  }
+
   S.thinkingSupported = supported;
   if (supported) btn.classList.remove("hidden");
   else           btn.classList.add("hidden");

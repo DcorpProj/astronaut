@@ -1,7 +1,15 @@
 # config.py
 import json
 import os
+import threading
 from pathlib import Path
+
+import requests
+
+
+# ════════════════════════════════════════════════════════════
+# CONFIG  (leaf module — nothing here imports from web/cli/etc.)
+# ════════════════════════════════════════════════════════════
 
 CONFIG = {
     "provider": os.getenv("ASTRONAUT_PROVIDER", "ollama"),
@@ -306,20 +314,90 @@ def get_system_prompt(mode: str) -> str:
     return PROMPTS.get(mode, PROMPTS["Standard"])
 
 
-def model_supports_thinking(model_name: str) -> bool:
-    import requests
+# ════════════════════════════════════════════════════════════
+# MODEL CAPABILITIES — dynamic probe via Ollama /api/show
+# ════════════════════════════════════════════════════════════
+
+_THINK_CACHE: dict[str, bool] = {}
+_THINK_LOCK  = threading.Lock()
+
+
+def _ollama_base_url() -> str:
+    base = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+    if not base.startswith("http"):
+        base = "http://" + base
+    return base.rstrip("/")
+
+
+def _query_ollama_thinking(model_name: str):
+    """Return True / False / None (None = Ollama unreachable or unclear)."""
     try:
-        base = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-        if not base.startswith("http"):
-            base = "http://" + base
-        base = base.rstrip("/")
-        r = requests.post(f"{base}/api/show", json={"model": model_name}, timeout=5)
+        r = requests.post(
+            f"{_ollama_base_url()}/api/show",
+            json={"model": model_name},
+            timeout=5,
+        )
         if r.status_code != 200:
+            return None
+
+        data = r.json() or {}
+
+        # 1. Modern Ollama: `capabilities` array
+        caps = data.get("capabilities") or []
+        if isinstance(caps, list) and caps:
+            return "thinking" in [str(c).lower() for c in caps]
+
+        # 2. Some builds expose a `thinking` metadata block
+        th = data.get("thinking")
+        if isinstance(th, dict):
+            values = th.get("values") or []
+            for v in values:
+                if str(v).lower() in ("true", "1", "low", "medium", "high"):
+                    return True
             return False
-        caps = r.json().get("capabilities", []) or []
-        return "thinking" in caps
+        if th is True:
+            return True
+        if th is False:
+            return False
+
+        return None
     except Exception:
+        return None
+
+
+def model_supports_thinking(model_name: str) -> bool:
+    """Return True if Ollama reports the model supports thinking.
+
+    Falls back to a name-based heuristic only if Ollama is unreachable,
+    so offline use degrades to 'qwen3* only' instead of crashing.
+    """
+    if not model_name:
         return False
+
+    with _THINK_LOCK:
+        if model_name in _THINK_CACHE:
+            return _THINK_CACHE[model_name]
+
+    supported = _query_ollama_thinking(model_name)
+    if supported is None:
+        supported = "qwen3" in model_name.lower()
+
+    with _THINK_LOCK:
+        _THINK_CACHE[model_name] = supported
+    return supported
+
+
+def invalidate_thinking_cache(model_name: str | None = None):
+    """Clear the thinking-capability cache.
+
+    Call with no argument to clear everything (e.g. after switching
+    providers), or with a model name to re-probe just that model.
+    """
+    with _THINK_LOCK:
+        if model_name is None:
+            _THINK_CACHE.clear()
+        else:
+            _THINK_CACHE.pop(model_name, None)
 
 
 # ════════════════════════════════════════════════════════════

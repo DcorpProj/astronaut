@@ -629,7 +629,7 @@ def get_or_build(workspace, force=False, with_summaries=False,
 def _default_budget() -> int:
     """Ask _shared for a model-scaled budget. Fall back to 12000."""
     try:
-        from _shared import context_budget
+        from astronaut._shared import context_budget
         return max(4000, int(context_budget() * 0.15))
     except Exception:
         return 12_000

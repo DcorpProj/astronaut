@@ -13,7 +13,7 @@ from flask import Flask, Response, jsonify, render_template, request, send_file
 import mimetypes
 
 from config import (
-    CONFIG, get_system_prompt, PROVIDER_PRESETS, load_agents_md,
+    CONFIG, get_system_prompt, PROVIDER_PRESETS, load_agents_md, model_supports_thinking
 )
 from history import (
     list_sessions, get_meta, update_meta, delete_session,
@@ -93,17 +93,6 @@ def _update_ws_pins(mutator):
     mutator(entry)
     _save_pins(data)
     return entry
-
-
-# ════════════════════════════════════════════════════════════
-# MODEL CAPABILITY DETECTION
-# ════════════════════════════════════════════════════════════
-
-def model_supports_thinking(model_name: str) -> bool:
-    if not model_name:
-        return False
-    return "qwen3" in model_name.lower()
-
 
 def _sync_config_from_providers():
     try:

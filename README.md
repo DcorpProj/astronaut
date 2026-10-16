@@ -5,7 +5,6 @@
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![Ollama](https://img.shields.io/badge/ollama-compatible-cyan)](https://ollama.com)
 [![MCP](https://img.shields.io/badge/MCP-supported-purple)](https://modelcontextprotocol.io/)
-[![LOC](https://img.shields.io/badge/lines-5893-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
 Astronaut AI is an autonomous agent that lives on your machine and actually **does** things —
@@ -45,6 +44,7 @@ Point it at OpenAI, OpenRouter, Groq, or Together and it works the same way.
 - Tested with: **Context7**, **Firecrawl**, **Tavily**, **sequential-thinking**
 
 ### Modes
+
 | Mode | Description |
 |------|-------------|
 | **Standard** | All tools, full autonomy |
@@ -82,17 +82,20 @@ astronaut/
 ├── history.py              # append-only JSONL, session management, truncation
 ├── settings.py             # global runtime settings
 ├── mcp_client.py           # MCP manager: parallel load, health monitor, tool wrappers
+├── repomap.py              # workspace symbol map + import graph
 ├── rag.py                  # workspace file index (embeddings optional)
 ├── sandbox.py              # AST-validated subprocess Python execution
 ├── skills.py               # skills/*.md loader
+├── planning.py             # plan-first execution
+├── utils.py                # @tool / @requires_confirmation decorators
+├── _shared.py              # safe_path, workspace root, context budget
 ├── plugins/
-│   ├── _shared.py          # safe_path, workspace root
 │   └── toolbox.py          # all native tools
-├── skills/                 # *.md skill files
+├── skills/                 # *.md skill files (user-supplied)
 ├── templates/
 │   └── index.html          # Web UI (Tailwind)
-├── sessions/               # per-chat JSONL logs
-└── workspace/              # sandboxed file area
+├── sessions/               # per-chat JSONL logs (runtime)
+└── workspace/              # sandboxed file area (runtime)
 ```
 
 ### The agent loop
@@ -136,35 +139,54 @@ astronaut/
 - **Ollama** running locally: [ollama.com](https://ollama.com)
 - **Node.js** (only if you want MCP servers via `npx`)
 
-### 2. Install dependencies
+### 2. Clone
 
 ```bash
-pip install ollama rich requests transliterate ddgs beautifulsoup4 \
+git clone https://github.com/DcorpProj/astronaut
+cd astronaut
+```
+
+### 3. Install dependencies
+
+**Core (CLI):**
+```bash
+pip install ollama rich requests beautifulsoup4 transliterate \
             prompt_toolkit pyyaml mcp
 ```
 
-Optional (for full feature set):
-
+**Web UI:**
 ```bash
-pip install openai            # OpenAI / OpenRouter / Groq / Together
-pip install pywebview         # native GUI mode
-pip install duckduckgo_search # legacy ddg_search path
+pip install flask flask-socketio pyjwt werkzeug
 ```
 
-### 3. Pull a model
+**Optional:**
+```bash
+pip install openai     # OpenAI / OpenRouter / Groq / Together
+pip install pywebview  # native GUI window (default mode)
+```
+
+Or from a file (if you keep one):
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Pull a model
 
 ```bash
 ollama pull qwen2.5:7b        # default — fast, good tool calling
-ollama pull granite4.1:8b     # alternative — stricter instruction following
+ollama pull qwen3:8b          # newer, supports thinking traces
+ollama pull granite4.1:8b     # stricter instruction following
 ```
 
-### 4. Clone and run
+### 5. Run
 
 ```bash
-git clone https://github.com/you/astronaut-ai
-cd astronaut-ai
-python main.py
+python main.py                          # default: native GUI window
+python main.py --cli                    # terminal UI
+python main.py --web                    # browser UI on http://127.0.0.1:5000
 ```
+
+If `pywebview` isn't installed, `python main.py` falls back to the CLI automatically.
 
 ---
 
@@ -173,10 +195,10 @@ python main.py
 ### CLI
 
 ```bash
-python main.py                          # default model, Standard mode
-python main.py --model granite4.1:8b    # different model
-python main.py --mode Code              # Code mode
-python main.py --workspace ./my-project # custom workspace
+python main.py --cli                     # default model, Standard mode
+python main.py --cli --model qwen3:8b    # different model
+python main.py --cli --mode Code         # Code mode
+python main.py --cli --workspace ./my-project
 ```
 
 Inside the CLI:
@@ -206,14 +228,13 @@ python main.py --web
 
 Opens `http://127.0.0.1:5000` in your browser. Multi-chat sidebar, live streaming, inline confirmation widgets, tool toggles, provider switcher, MCP settings.
 
-### Native window
+### Native window (default)
 
 ```bash
-pip install pywebview
-python main.py --gui
+python main.py
 ```
 
-Same UI, wrapped in a real desktop window. ~5 MB instead of 150 MB (Electron).
+Same UI, wrapped in a real desktop window via `pywebview`. ~5 MB instead of 150 MB (Electron).
 
 ---
 
@@ -231,9 +252,11 @@ Same UI, wrapped in a real desktop window. ~5 MB instead of 150 MB (Electron).
   "ai_titles": true,
   "disabled_tools": [],
   "verification_enabled": true,
-  "max_verification_retries": 2,
+  "max_verification_retries": 3,
   "min_verification_attempts": 2,
-  "verify_trivial_skip": true
+  "verify_trivial_skip": true,
+  "thinking_mode": "auto",
+  "planning_enabled": false
 }
 ```
 
@@ -273,25 +296,19 @@ Same UI, wrapped in a real desktop window. ~5 MB instead of 150 MB (Electron).
 }
 ```
 
+> On Windows, MCP servers launch via `cmd /c npx …`.
+> On macOS/Linux, replace `"command": "cmd"` with `"command": "npx"` and drop the `/c` argument.
+
 ---
 
 ## Commands
 
+### Session
 | Command | Description |
 |---------|-------------|
 | `/help` | Show all commands |
 | `/status` | Current configuration |
 | `/settings` | Runtime settings |
-| `/tools` | List active tools |
-| `/enable <name>` | Enable a tool |
-| `/disable <name>` | Disable a tool |
-| `/model <name>` | Switch model |
-| `/mode <mode>` | `Standard`, `Code`, `Minimal`, `Creator` |
-| `/provider <name>` | `ollama`, `openai`, `openrouter`, `groq`, `together`, `custom` |
-| `/workspace <path>` | Change workspace |
-| `/mcp` | List MCP servers |
-| `/mcphealth` | MCP health dashboard |
-| `/verify on\|off\|trivial\|passes N` | Control self-verification |
 | `/sessions` | List all chats |
 | `/history` | Show current chat history |
 | `/switch <n>` | Switch to another chat |
@@ -305,7 +322,45 @@ Same UI, wrapped in a real desktop window. ~5 MB instead of 150 MB (Electron).
 | `/context` | Approximate context size |
 | `/system` | Show effective system prompt |
 | `/export <file.md>` | Export chat as Markdown |
+| `/save <file.md>` | Alias for `/export` |
+| `/yank <file>` | Save last reply to a file |
+
+### Model & providers
+| Command | Description |
+|---------|-------------|
+| `/model <name>` | Switch model |
+| `/provider <name>` | `ollama`, `openai`, `openrouter`, `groq`, `together`, `custom` |
+| `/think on\|off\|auto` | Toggle thinking traces (Qwen3, Nemotron, Gemma 4) |
+| `/verify on\|off\|trivial\|passes N` | Control self-verification |
+| `/verifier-model <name\|off>` | Set a dedicated verifier model |
+| `/planning on\|off` | Toggle plan-first execution |
+
+### Modes & tools
+| Command | Description |
+|---------|-------------|
+| `/mode <mode>` | `Standard`, `Code`, `Minimal`, `Creator` |
+| `/tools` | List active tools |
+| `/enable <name>` | Enable a tool |
+| `/disable <name>` | Disable a tool |
+| `/scope <text>` | Preview which tools are allowed for a given prompt |
+
+### Workspace & MCP
+| Command | Description |
+|---------|-------------|
+| `/workspace <path>` | Change workspace |
+| `/attach <path>` | Attach a file (or use `!- path -!` inline) |
+| `/repomap` | Show repo map for the current workspace |
+| `/repomap-gen` | Rebuild the repo map from disk |
+| `/mcp` | List MCP servers |
+| `/mcphealth` | MCP health dashboard |
+
+### Other
+| Command | Description |
+|---------|-------------|
+| `/debug` | Test `create_file` round-trip & print signature |
+| `/kill` | Interrupt the current agent turn |
 | `/exit` | Quit |
+| `/quit` | Alias for `/exit` |
 
 ---
 
@@ -339,7 +394,7 @@ Restart the CLI — the tool is now in the inventory. `@requires_confirmation` t
 
 ## Adding an MCP server
 
-### Via web UI
+### Via the web UI
 
 `⚙️ Settings → MCP Servers → + add`
 
@@ -367,13 +422,24 @@ Restart. The tools appear in the inventory with an `[MCP]` badge.
 
 ## Model recommendations
 
+### Local
+
 | Size | Model | Notes |
 |------|-------|-------|
 | 7B | `qwen2.5:7b` | Best balance for tool calling |
 | 7B | `qwen2.5-coder:7b` | Better for code, tool calling is decent |
+| 8B | `qwen3:8b` | Thinking traces; good agentic behaviour |
 | 8B | `granite4.1:8b` | Stricter instruction following, denser |
 | 14B | `qwen2.5:14b` | **Big jump** in multi-step chains |
 | 32B | `qwen2.5:32b` | Nearly no hallucinations (needs 24 GB VRAM) |
+
+### Cloud (via Ollama Cloud)
+
+| Model | Notes |
+|-------|-------|
+| `nemotron-3-nano:30b-cloud` | MoE, 3.5B active — efficient agentic model |
+| `gemma4:31b-cloud` | Well-rounded, strong reasoning |
+| `gpt-oss:120b-cloud` | Heavy; burns free credits fast |
 
 **7B caveats**: forgets data mid-chain, invents tool arguments,
 loops on meta-tools. Astronaut AI has guards against all of this, but
@@ -397,18 +463,22 @@ loops on meta-tools. Astronaut AI has guards against all of this, but
 Active development. Not production-ready. Expect bugs, especially with
 smaller models and non-OpenAI-compatible providers.
 
-Feedback, PRs, and issues welcome.
+**Feedback, PRs, and issues welcome — I read every one.**
 
 ---
 
 ## Credits
 
 Built on the shoulders of:
+
 - [Ollama](https://ollama.com) — local model runtime
 - [Rich](https://github.com/Textualize/rich) — terminal UI
 - [prompt_toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit) — input handling
 - [MCP](https://modelcontextprotocol.io/) — standard for tool servers
 - [Flask](https://flask.palletsprojects.com/) + [Tailwind](https://tailwindcss.com/) — web UI
+- [D3](https://d3js.org/) — repo map graph rendering
+- [marked](https://marked.js.org/) — Markdown rendering in the web UI
+- [highlight.js](https://highlightjs.org/) — syntax highlighting
 
 Named after the people who actually do this for a living. Yes, this thing
 mostly stays on the ground.
@@ -417,4 +487,4 @@ mostly stays on the ground.
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
